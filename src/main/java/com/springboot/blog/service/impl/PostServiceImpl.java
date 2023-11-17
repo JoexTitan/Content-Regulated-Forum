@@ -6,7 +6,11 @@ import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.service.PostService;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,16 +21,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
-    private PostRepository postRepository;
-
-    private ModelMapper mapper;
-
-    public PostServiceImpl(PostRepository postRepository, ModelMapper mapper) {
-          this.postRepository = postRepository;
-          this.mapper = mapper;
-    }
+    private final ModelMapper mapper;
+    private final PostRepository postRepository;
 
     @Override
     public PostDto createPost(PostDto postDto) {
@@ -41,6 +40,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Cacheable(cacheNames = "allPosts", key = "#pageNo + '-' + #pageSize + '-' + #sortBy + '-' + #sortDir")
     public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) {
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
@@ -68,12 +68,14 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Cacheable(cacheNames = "posts", key = "#id")
     public PostDto getPostById(long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
         return mapToDTO(post);
     }
 
     @Override
+    @CachePut(cacheNames = "posts", key = "#id")
     public PostDto updatePost(PostDto postDto, long id) {
         // get post by id from the database
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
@@ -87,19 +89,18 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "posts", key = "#id")
     public void deletePostById(long id) {
         // get post by id from the database
         Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
         postRepository.delete(post);
     }
 
-    // convert Entity into DTO
     private PostDto mapToDTO(Post post){
         PostDto postDto = mapper.map(post, PostDto.class);
         return postDto;
     }
 
-    // convert DTO to entity
     private Post mapToEntity(PostDto postDto){
         Post post = mapper.map(postDto, Post.class);
         return post;

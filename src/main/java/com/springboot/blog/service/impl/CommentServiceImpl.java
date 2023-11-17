@@ -8,7 +8,11 @@ import com.springboot.blog.payload.CommentDto;
 import com.springboot.blog.repository.CommentRepository;
 import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.service.CommentService;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -16,20 +20,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
-    private CommentRepository commentRepository;
-    private PostRepository postRepository;
-    private ModelMapper mapper;
-    public CommentServiceImpl(CommentRepository commentRepository, PostRepository postRepository, ModelMapper mapper) {
-        this.commentRepository = commentRepository;
-        this.postRepository = postRepository;
-        this.mapper = mapper;
-    }
+    private final ModelMapper mapper;
+    private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     public CommentDto createComment(long postId, CommentDto commentDto) {
-
         Comment comment = mapToEntity(commentDto);
 
         // retrieve post entity by id
@@ -46,6 +45,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(cacheNames = "allComments", key = "#postId")
     public List<CommentDto> getCommentsByPostId(long postId) {
         // retrieve comments by postId
         List<Comment> comments = commentRepository.findByPostId(postId);
@@ -55,6 +55,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(cacheNames = "comment", key = "#postId + '-' + #commentId")
     public CommentDto getCommentById(Long postId, Long commentId) {
         // retrieve post entity by id
         Post post = postRepository.findById(postId).orElseThrow(
@@ -72,6 +73,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @CachePut(cacheNames = "comment", key = "#postId + '-' + #commentId")
     public CommentDto updateComment(Long postId, long commentId, CommentDto commentRequest) {
         // retrieve post entity by id
         Post post = postRepository.findById(postId).orElseThrow(
@@ -94,6 +96,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @CacheEvict(cacheNames = "comment", key = "#postId + '-' + #commentId")
     public void deleteComment(Long postId, Long commentId) {
         // retrieve post entity by id
         Post post = postRepository.findById(postId).orElseThrow(

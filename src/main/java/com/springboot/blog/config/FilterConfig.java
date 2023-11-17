@@ -12,12 +12,10 @@ import org.springframework.context.annotation.Configuration;
 public class FilterConfig {
 
     private final UserRepository userRepository;
-
     @Autowired
     public FilterConfig(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-
     @Bean
     public FilterRegistrationBean<RegistrationValidationFilter> registrationFilter() {
         FilterRegistrationBean<RegistrationValidationFilter> registrationBean = new FilterRegistrationBean<>();
@@ -26,7 +24,6 @@ public class FilterConfig {
         registrationBean.addUrlPatterns("/api/auth/register", "/api/auth/signup");
         return registrationBean;
     }
-
     @Bean
     public FilterRegistrationBean<CommentValidationFilter> commentFilter() {
         FilterRegistrationBean<CommentValidationFilter> registrationBean = new FilterRegistrationBean<>();
@@ -35,5 +32,4 @@ public class FilterConfig {
         registrationBean.addUrlPatterns("/api/auth/posts/**");
         return registrationBean;
     }
-
 }
