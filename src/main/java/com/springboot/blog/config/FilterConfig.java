@@ -20,7 +20,7 @@ public class FilterConfig {
     public FilterRegistrationBean<RegistrationValidationFilter> registrationFilter() {
         FilterRegistrationBean<RegistrationValidationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new RegistrationValidationFilter(userRepository));
-        registrationBean.setOrder(0);
+        registrationBean.setOrder(-1);
         registrationBean.addUrlPatterns("/api/auth/register", "/api/auth/signup");
         return registrationBean;
     }
@@ -28,7 +28,7 @@ public class FilterConfig {
     public FilterRegistrationBean<CommentValidationFilter> commentFilter() {
         FilterRegistrationBean<CommentValidationFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new CommentValidationFilter(userRepository));
-        registrationBean.setOrder(1);
+        registrationBean.setOrder(-2);
         registrationBean.addUrlPatterns("/api/auth/posts/**");
         return registrationBean;
     }
