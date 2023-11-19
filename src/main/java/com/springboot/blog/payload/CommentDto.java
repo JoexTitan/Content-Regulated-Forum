@@ -5,8 +5,10 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class CommentDto {
+public class CommentDto implements Serializable {
     private long id;
     // name should not be null or empty
     @NotEmpty(message = "Name should not be null or empty")

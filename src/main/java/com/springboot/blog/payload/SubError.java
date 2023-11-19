@@ -1,6 +1,8 @@
 package com.springboot.blog.payload;
 
-public class SubError {
+import java.io.Serializable;
+
+public class SubError implements Serializable {
     private final String field;
     private final String message;
 

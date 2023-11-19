@@ -1,9 +1,10 @@
 package com.springboot.blog.payload;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public class ErrorResponse {
+public class ErrorResponse implements Serializable {
 
     private final LocalDateTime timestamp;
     private final String message;

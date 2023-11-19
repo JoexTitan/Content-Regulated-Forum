@@ -10,6 +10,7 @@ import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class CommentServiceImpl implements CommentService {
 
     private final ModelMapper mapper;
+    private final CacheManager cacheManager;
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
 
@@ -37,10 +39,10 @@ public class CommentServiceImpl implements CommentService {
 
         // set post to comment entity
         comment.setPost(post);
-
+        // clear cache for posts
+        evictPostCache(postId);
         // comment entity to DB
         Comment newComment =  commentRepository.save(comment);
-
         return mapToDTO(newComment);
     }
 
@@ -91,7 +93,9 @@ public class CommentServiceImpl implements CommentService {
         comment.setEmail(commentRequest.getEmail());
         comment.setBody(commentRequest.getBody());
 
+        evictPostCache(postId);
         Comment updatedComment = commentRepository.save(comment);
+
         return mapToDTO(updatedComment);
     }
 
@@ -110,6 +114,7 @@ public class CommentServiceImpl implements CommentService {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Comment does not belongs to post");
         }
 
+        evictPostCache(postId);
         commentRepository.delete(comment);
     }
 
@@ -121,5 +126,9 @@ public class CommentServiceImpl implements CommentService {
     private Comment mapToEntity(CommentDto commentDto){
         Comment comment = mapper.map(commentDto, Comment.class);
         return  comment;
+    }
+    private void evictPostCache(Long postId) {
+        // Evict the cache for the associated post
+        cacheManager.getCache("posts").evict(postId);
     }
 }

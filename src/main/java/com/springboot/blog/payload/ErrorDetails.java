@@ -1,8 +1,9 @@
 package com.springboot.blog.payload;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class ErrorDetails {
+public class ErrorDetails implements Serializable {
     private Date timestamp;
     private String message;
     private String details;
