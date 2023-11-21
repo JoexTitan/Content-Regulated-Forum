@@ -5,6 +5,8 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,6 +40,18 @@ public class Post implements Serializable {
     @Size(min = 10, message = "Content must be at least 10 characters")
     @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Content must contain only letters, numbers, and spaces")
     private String content;
+
+    @Column(name = "publishDate")
+    private Date publishDate;
+
+    @Column(name = "likesCount")
+    private long likesCount;
+
+    @Column(name = "shareCount")
+    private long shareCount;
+
+    @Column(name = "commentCount")
+    private long commentCount;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();

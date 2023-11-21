@@ -6,6 +6,7 @@ import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.utils.AppConstants;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,12 +16,23 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/posts")
+@RequiredArgsConstructor
 public class PostController {
 
-    private PostService postService;
+    private final PostService postService;
 
-    public PostController(PostService postService) {
-        this.postService = postService;
+    @PostMapping("/like/{postId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<String> likePost(@PathVariable(name = "postId") long postId) {
+        postService.incrementLikes(postId);
+        return new ResponseEntity<>("Likes incremented", HttpStatus.OK);
+    }
+
+    @PostMapping("/share/{postId}")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<String> sharePost(@PathVariable(name = "postId") long postId) {
+        postService.incrementShares(postId);
+        return new ResponseEntity<>("Shares incremented", HttpStatus.OK);
     }
 
     @PostMapping

@@ -39,6 +39,8 @@ public class CommentServiceImpl implements CommentService {
 
         // set post to comment entity
         comment.setPost(post);
+        // increment comment count
+        post.setCommentCount(post.getCommentCount() + 1);
         // clear cache for posts
         evictPostCache(postId);
         // comment entity to DB

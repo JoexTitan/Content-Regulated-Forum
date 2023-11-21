@@ -1,10 +1,13 @@
 package com.springboot.blog.service.impl;
 
 import com.springboot.blog.entity.Post;
+import com.springboot.blog.entity.UserEntity;
+import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.repository.PostRepository;
+import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.PostService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -17,6 +20,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,6 +37,7 @@ public class PostServiceImpl implements PostService {
 
         // convert DTO to entity
         Post post = mapToEntity(postDto);
+        post.setPublishDate(new Date());
         Post newPost = postRepository.save(post);
 
         // convert entity to DTO
@@ -76,8 +82,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @CachePut(cacheNames = "posts", key = "#id")
     public PostDto updatePost(PostDto postDto, long id) {
-        // get post by id from the database
-        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+        Post post = mapToEntity(getPostById(id));
 
         post.setTitle(postDto.getTitle());
         post.setDescription(postDto.getDescription());
@@ -86,12 +91,24 @@ public class PostServiceImpl implements PostService {
         Post updatedPost = postRepository.save(post);
         return mapToDTO(updatedPost);
     }
+    @Override
+    public void incrementLikes(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        post.setLikesCount(post.getLikesCount() + 1);
+        postRepository.save(post);
+    }
+    @Override
+    public void incrementShares(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        post.setShareCount(post.getShareCount() + 1);
+        postRepository.save(post);
+    }
 
     @Override
     @CacheEvict(cacheNames = "posts", key = "#id")
     public void deletePostById(long id) {
         // get post by id from the database
-        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+        Post post = mapToEntity(getPostById(id));
         postRepository.delete(post);
     }
 
