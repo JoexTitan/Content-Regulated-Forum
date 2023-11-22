@@ -116,6 +116,10 @@ public class CommentServiceImpl implements CommentService {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "Comment does not belongs to post");
         }
 
+        if (post.getCommentCount() > 0){
+            post.setCommentCount(post.getCommentCount() - 1);
+        }
+
         evictPostCache(postId);
         commentRepository.delete(comment);
     }

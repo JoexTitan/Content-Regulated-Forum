@@ -82,7 +82,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @CachePut(cacheNames = "posts", key = "#id")
     public PostDto updatePost(PostDto postDto, long id) {
-        Post post = mapToEntity(getPostById(id));
+        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
 
         post.setTitle(postDto.getTitle());
         post.setDescription(postDto.getDescription());

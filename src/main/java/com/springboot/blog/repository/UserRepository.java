@@ -8,7 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<UserEntity,Long> {
-    // Basic CRUD DB lookups inherited from CrudRepository
     Optional<UserEntity> findByEmail(String email);
 
     Optional<UserEntity> findByUsernameOrEmail(String username, String email);
