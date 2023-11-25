@@ -9,8 +9,12 @@ import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.PostService;
+import com.springboot.blog.service.ProfanityService;
+import com.springboot.blog.utils.ProfanityStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -23,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,15 +35,22 @@ import java.util.stream.Collectors;
 public class PostServiceImpl implements PostService {
 
     private final ModelMapper mapper;
+    private final CacheManager cacheManager;
     private final PostRepository postRepository;
+    private final ProfanityService profanityService;
+    private final SentimentAnalysisService sentimentAnalysisService;
 
     @Override
     public PostDto createPost(PostDto postDto) {
 
+        String postSentiment = sentimentAnalysisService.analyzeSentiment(postDto.getContent());
+
         // convert DTO to entity
         Post post = mapToEntity(postDto);
         post.setPublishDate(new Date());
-        Post newPost = postRepository.save(post);
+        post.setPostSentiment(postSentiment);
+        // post.setProfanityStatus(ProfanityStatus.ACTIVE);
+        Post newPost = postRepository.save(profanityService.profanityMarker(post));
 
         // convert entity to DTO
         PostDto postResponse = mapToDTO(newPost);
@@ -56,13 +68,15 @@ public class PostServiceImpl implements PostService {
 
         Page<Post> posts = postRepository.findAll(pageable);
 
-        // get content for page object
+        // get content for page/pagination object
         List<Post> listOfPosts = posts.getContent();
 
-        List<PostDto> content= listOfPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+        List<PostDto> listOfPostDto = listOfPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
+
+        List<PostDto> profanityFreePosts = profanityService.filterPostProfanity(listOfPostDto);
 
         PostResponse postResponse = new PostResponse();
-        postResponse.setContent(content);
+        postResponse.setContent(profanityFreePosts);
         postResponse.setPageNo(posts.getNumber());
         postResponse.setPageSize(posts.getSize());
         postResponse.setTotalElements(posts.getTotalElements());
@@ -75,40 +89,51 @@ public class PostServiceImpl implements PostService {
     @Override
     @Cacheable(cacheNames = "posts", key = "#id")
     public PostDto getPostById(long id) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
-        return mapToDTO(post);
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Post", "id", id));
+        if (Objects.equals(post.getProfanityStatus(), ProfanityStatus.ACTIVE)) {
+            return mapToDTO(post);
+        } else {
+            throw new BlogAPIException("The current post has been blocked due to its inappropriate content.");
+        }
     }
 
     @Override
     @CachePut(cacheNames = "posts", key = "#id")
     public PostDto updatePost(PostDto postDto, long id) {
-        Post post = postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+        Post post = postRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Post", "id", id));
 
         post.setTitle(postDto.getTitle());
         post.setDescription(postDto.getDescription());
         post.setContent(postDto.getContent());
 
-        Post updatedPost = postRepository.save(post);
+        Post updatedPost = postRepository.save(profanityService.profanityMarker(post));
         return mapToDTO(updatedPost);
     }
     @Override
+    @CacheEvict(cacheNames = "posts", allEntries = true)
     public void incrementLikes(Long postId) {
-        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        Post post = postRepository.findById(postId).orElseThrow(
+                () -> new ResourceNotFoundException("Post", "id", postId));
         post.setLikesCount(post.getLikesCount() + 1);
         postRepository.save(post);
+        evictPostCache(postId);
     }
     @Override
     public void incrementShares(Long postId) {
-        Post post = postRepository.findById(postId).orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        Post post = postRepository.findById(postId).orElseThrow(
+                () -> new ResourceNotFoundException("Post", "id", postId));
         post.setShareCount(post.getShareCount() + 1);
         postRepository.save(post);
+        evictPostCache(postId);
     }
 
     @Override
-    @CacheEvict(cacheNames = "posts", key = "#id")
-    public void deletePostById(long id) {
+    public void deletePostById(long postId) {
         // get post by id from the database
-        Post post = mapToEntity(getPostById(id));
+        Post post = postRepository.findById(postId).orElseThrow(
+                () -> new ResourceNotFoundException("Post", "id", postId));
         postRepository.delete(post);
     }
 
@@ -120,5 +145,9 @@ public class PostServiceImpl implements PostService {
     private Post mapToEntity(PostDto postDto){
         Post post = mapper.map(postDto, Post.class);
         return post;
+    }
+    private void evictPostCache(Long postId) {
+        // Evict the cache for the associated post
+        cacheManager.getCache("posts").evict(postId);
     }
 }

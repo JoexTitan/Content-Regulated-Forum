@@ -1,16 +1,20 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.service.ProfanityService;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Properties;
 
 @Service
+@RequiredArgsConstructor
 public class SentimentAnalysisService {
 
     private final StanfordCoreNLP pipeline;
+
     public SentimentAnalysisService() {
         Properties props = new Properties();
         props.setProperty("annotators", "tokenize, ssplit, parse, sentiment");

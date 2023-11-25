@@ -24,4 +24,6 @@ public class PostDto implements Serializable {
     private long likesCount;
     private long shareCount;
     private long commentCount;
+    private String postSentiment;
+    private String profanityStatus;
 }

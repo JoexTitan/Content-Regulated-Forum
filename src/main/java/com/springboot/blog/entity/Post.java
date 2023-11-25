@@ -31,14 +31,12 @@ public class Post implements Serializable {
 
     @Column(name = "description", nullable = false)
     @NotBlank(message = "Description cannot be blank")
-    @Size(max = 250, message = "Description must be at most 250 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Description must contain only letters, numbers, and spaces")
+    @Size(max = 100000, message = "Description must be at most 100000 characters")
     private String description;
 
     @Column(name = "content", nullable = false)
     @NotBlank(message = "Content cannot be blank")
-    @Size(min = 10, message = "Content must be at least 10 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Content must contain only letters, numbers, and spaces")
+    @Size(min = 100, message = "Content must be at least 100 characters")
     private String content;
 
     @Column(name = "publishDate")
@@ -55,4 +53,10 @@ public class Post implements Serializable {
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
+
+    @Column(name = "postSentiment")
+    private String postSentiment;
+
+    @Column(name = "profanityStatus")
+    private String profanityStatus;
 }
