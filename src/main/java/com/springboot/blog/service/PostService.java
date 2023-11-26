@@ -12,6 +12,8 @@ public interface PostService {
 
     PostDto updatePost(PostDto postDto, long id);
 
+    void reportPost(Long postId, String username);
+
     void deletePostById(long id);
 
     void incrementLikes(Long postId);

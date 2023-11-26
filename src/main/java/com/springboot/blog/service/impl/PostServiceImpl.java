@@ -11,9 +11,11 @@ import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.ProfanityService;
 import com.springboot.blog.utils.ProfanityStatus;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -22,9 +24,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -34,23 +37,51 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
+    @PersistenceContext
+    private EntityManager entityManager;
     private final ModelMapper mapper;
     private final CacheManager cacheManager;
+    private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final ProfanityService profanityService;
     private final SentimentAnalysisService sentimentAnalysisService;
 
-    @Override
-    public PostDto createPost(PostDto postDto) {
+    private UserEntity getCurrentUser() {
+        String Username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByUsername(Username).orElseThrow(() -> new RuntimeException("Current user not found"));
+    }
 
+    @Override
+    @Transactional
+    public PostDto createPost(PostDto postDto) {
         String postSentiment = sentimentAnalysisService.analyzeSentiment(postDto.getContent());
 
         // convert DTO to entity
         Post post = mapToEntity(postDto);
         post.setPublishDate(new Date());
+        post.setNumOfReports((long) 0);
         post.setPostSentiment(postSentiment);
-        // post.setProfanityStatus(ProfanityStatus.ACTIVE);
-        Post newPost = postRepository.save(profanityService.profanityMarker(post));
+
+        // Get the current user
+        UserEntity currentUser = getCurrentUser();
+
+        // Set the user in the post
+        post.setPublisherID(currentUser);
+
+        // Detach the user entity
+        entityManager.detach(currentUser);
+
+        // Add the post to the user's set of posts
+        currentUser.getPosts().add(post);
+
+        // Perform profanity check
+        post = profanityService.profanityMarker(post);
+
+        // Merge the post to reattach it
+        post = entityManager.merge(post);
+
+        // Save the post
+        Post newPost = postRepository.save(post);
 
         // convert entity to DTO
         PostDto postResponse = mapToDTO(newPost);
@@ -111,6 +142,7 @@ public class PostServiceImpl implements PostService {
         Post updatedPost = postRepository.save(profanityService.profanityMarker(post));
         return mapToDTO(updatedPost);
     }
+
     @Override
     @CacheEvict(cacheNames = "posts", allEntries = true)
     public void incrementLikes(Long postId) {
@@ -120,6 +152,7 @@ public class PostServiceImpl implements PostService {
         postRepository.save(post);
         evictPostCache(postId);
     }
+
     @Override
     public void incrementShares(Long postId) {
         Post post = postRepository.findById(postId).orElseThrow(
@@ -130,10 +163,34 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public void reportPost(Long postId, String username) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+
+        // Logic to validate that user is not the owner of this blog
+
+        // Logic to validate that the user has not already reported this blog
+
+
+        post.setNumOfReports(post.getNumOfReports() + 1);
+        postRepository.save(post);
+        evictPostCache(postId);
+    }
+
+    @Override
     public void deletePostById(long postId) {
         // get post by id from the database
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
+
+        // Remove the post from the user's set of posts
+        UserEntity user = post.getPublisherID();
+        user.getPosts().remove(post);
+
+        // Save the user to update the relationship
+        userRepository.save(user);
+
+        // Delete the post
         postRepository.delete(post);
     }
 

@@ -32,4 +32,8 @@ public class UserEntity implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id")
     )
     private Set<RoleEntity> roles;
+
+    @OneToMany(mappedBy = "publisherID", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+    private Set<Post> posts = new HashSet<>();
+
 }

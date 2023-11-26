@@ -1,10 +1,12 @@
 package com.springboot.blog.controller;
 
 import com.springboot.blog.aspect.GetExecutionTime;
+import com.springboot.blog.jwt.JwtTokenProvider;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.utils.AppConstants;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -12,24 +14,38 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 public class PostController {
 
     private final PostService postService;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/report/{postId}")
+    public ResponseEntity<String> reportPost(@PathVariable(name = "postId") long postId, HttpServletRequest request) {
+
+        // extract token form header
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            // extract username from token
+            String username = jwtTokenProvider.extractUsername(token);
+
+            System.out.println("reportPost -> " + username + "has added a complaint!");
+            postService.reportPost(postId, username);
+        }
+
+        return new ResponseEntity<>("Thank you, the post has been reported.", HttpStatus.OK);
+    }
 
     @PostMapping("/like/{postId}")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> likePost(@PathVariable(name = "postId") long postId) {
         postService.incrementLikes(postId);
         return new ResponseEntity<>("Likes incremented", HttpStatus.OK);
     }
 
     @PostMapping("/share/{postId}")
-    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> sharePost(@PathVariable(name = "postId") long postId) {
         postService.incrementShares(postId);
         return new ResponseEntity<>("Shares incremented", HttpStatus.OK);

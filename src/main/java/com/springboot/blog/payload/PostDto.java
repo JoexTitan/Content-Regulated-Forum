@@ -11,11 +11,13 @@ import jakarta.validation.constraints.Size;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
 public class PostDto implements Serializable {
-    private long id;
+    private Long id;
+    private Long publisherID;
     private String title;
     private String description;
     private String content;
@@ -26,4 +28,5 @@ public class PostDto implements Serializable {
     private long commentCount;
     private String postSentiment;
     private String profanityStatus;
+    private Long numOfReports;
 }

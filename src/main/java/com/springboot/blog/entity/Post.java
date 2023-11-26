@@ -34,7 +34,7 @@ public class Post implements Serializable {
     @Size(max = 100000, message = "Description must be at most 100000 characters")
     private String description;
 
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", columnDefinition = "TEXT", nullable = false)
     @NotBlank(message = "Content cannot be blank")
     @Size(min = 100, message = "Content must be at least 100 characters")
     private String content;
@@ -43,13 +43,13 @@ public class Post implements Serializable {
     private Date publishDate;
 
     @Column(name = "likesCount")
-    private long likesCount;
+    private Long likesCount;
 
     @Column(name = "shareCount")
-    private long shareCount;
+    private Long shareCount;
 
     @Column(name = "commentCount")
-    private long commentCount;
+    private Long commentCount;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Comment> comments = new HashSet<>();
@@ -59,4 +59,11 @@ public class Post implements Serializable {
 
     @Column(name = "profanityStatus")
     private String profanityStatus;
+
+    @Column(name = "numOfReports")
+    private Long numOfReports;
+
+    @ManyToOne
+    @JoinColumn(name = "publisher_id", nullable = false)
+    private UserEntity publisherID;
 }

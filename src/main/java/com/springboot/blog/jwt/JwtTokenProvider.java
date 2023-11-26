@@ -4,9 +4,11 @@ import com.springboot.blog.exception.BlogAPIException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.time.Instant;
@@ -81,6 +83,14 @@ public class JwtTokenProvider {
             throw new BlogAPIException("The token is illegal!");
         }
     }
+    public String getTokenFromHeader(HttpServletRequest request) {
+        String BearerToken = request.getHeader("Authorization");
 
+        if (StringUtils.hasText(BearerToken) && BearerToken.startsWith("Bearer ")) {
+            String tokenVal = BearerToken.substring(7,BearerToken.length());
+            return tokenVal;
+        }
 
+        return null;
+    }
 }
