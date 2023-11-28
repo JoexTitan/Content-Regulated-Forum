@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -53,7 +55,6 @@ public class PostController {
 
     @PostMapping
     @GetExecutionTime
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto){
         return new ResponseEntity<>(postService.createPost(postDto), HttpStatus.CREATED);
     }
@@ -76,7 +77,6 @@ public class PostController {
 
     @GetExecutionTime
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PostDto> updatePost(@Valid @RequestBody PostDto postDto, @PathVariable(name = "id") long id) {
        PostDto postResponse = postService.updatePost(postDto, id);
        return new ResponseEntity<>(postResponse, HttpStatus.OK);
@@ -84,9 +84,15 @@ public class PostController {
 
     @GetExecutionTime
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deletePost(@PathVariable(name = "id") long id){
         postService.deletePostById(id);
         return new ResponseEntity<>("Post entity deleted successfully.", HttpStatus.OK);
     }
+
+    @GetExecutionTime
+    @GetMapping("/publisher/{publisherId}")
+    public ResponseEntity<Set<PostDto>> getPostByPublisherId(@PathVariable(name = "publisherId") long publisherId){
+        return ResponseEntity.ok(postService.getPostByPublisherId(publisherId)); // time taken to execute : 19 ms
+    }
+
 }

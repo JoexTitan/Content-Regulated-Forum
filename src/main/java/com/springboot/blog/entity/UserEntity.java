@@ -1,10 +1,15 @@
 package com.springboot.blog.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -36,4 +41,16 @@ public class UserEntity implements Serializable {
     @OneToMany(mappedBy = "publisherID", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     private Set<Post> posts = new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(
+            name = "user_followers",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "follower_id", referencedColumnName = "id")
+    )
+    private Set<UserEntity> followers = new HashSet<>();
+
+    @ManyToMany(mappedBy = "followers")
+    private Set<UserEntity> following = new HashSet<>();
+
+    private List<String> favBlogGenres;
 }

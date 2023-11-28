@@ -28,9 +28,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -163,6 +161,16 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public Set<PostDto> getPostByPublisherId(long publisherId) {
+        Set<Post> posts = postRepository.findAllPostsByPublisher(publisherId);
+        Set<PostDto> postDTOs = posts
+                .stream()
+                .map(post -> mapToDTO(post))
+                .collect(Collectors.toSet());
+        return postDTOs;
+    }
+
+    @Override
     public void reportPost(Long postId, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -170,7 +178,6 @@ public class PostServiceImpl implements PostService {
         // Logic to validate that user is not the owner of this blog
 
         // Logic to validate that the user has not already reported this blog
-
 
         post.setNumOfReports(post.getNumOfReports() + 1);
         postRepository.save(post);

@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -21,6 +22,7 @@ public class PostDto implements Serializable {
     private String title;
     private String description;
     private String content;
+    private List<String> tags;
     private Date publishDate;
     private Set<CommentDto> comments;
     private long likesCount;

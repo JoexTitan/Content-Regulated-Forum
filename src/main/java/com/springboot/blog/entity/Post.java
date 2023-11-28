@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -38,6 +39,10 @@ public class Post implements Serializable {
     @NotBlank(message = "Content cannot be blank")
     @Size(min = 100, message = "Content must be at least 100 characters")
     private String content;
+
+    @Column(name = "tags")
+    @NotEmpty(message = "Tags must not be empty")
+    private List<String> tags;
 
     @Column(name = "publishDate")
     private Date publishDate;

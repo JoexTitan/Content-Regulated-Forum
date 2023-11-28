@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.Set;
 
 public interface UserRepository extends JpaRepository<UserEntity,Long> {
     Optional<UserEntity> findByEmail(String email);
@@ -19,5 +20,13 @@ public interface UserRepository extends JpaRepository<UserEntity,Long> {
 
     Boolean existsByEmail(String email);
 
+    @Query(value = "SELECT * FROM users u INNER JOIN user_followers uf ON u.id = uf.follower_id WHERE uf.user_id = :userId", nativeQuery = true)
+    Set<UserEntity> findFollowersByUserId(@Param("userId") Long userId);
+
+    @Query(value = "SELECT * FROM users u INNER JOIN user_followers uf ON u.id = uf.user_id WHERE uf.follower_id = :userId", nativeQuery = true)
+    Set<UserEntity> findFollowingByUserId(@Param("userId") Long userId);
+
+    @Query(value = "SELECT * FROM users ORDER BY users.id", nativeQuery = true)
+    Set<UserEntity> findAllUsers();
 
 }

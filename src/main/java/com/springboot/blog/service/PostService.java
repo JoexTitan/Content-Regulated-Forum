@@ -3,6 +3,8 @@ package com.springboot.blog.service;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 
+import java.util.Set;
+
 public interface PostService {
     PostDto createPost(PostDto postDto);
 
@@ -20,4 +22,5 @@ public interface PostService {
 
     void incrementShares(Long postId);
 
+    Set<PostDto> getPostByPublisherId(long publisherId);
 }
