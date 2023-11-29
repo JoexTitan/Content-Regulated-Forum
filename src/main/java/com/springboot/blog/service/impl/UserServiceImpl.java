@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    // config check commit II
 
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
@@ -30,7 +29,7 @@ public class UserServiceImpl implements UserService {
         // 1) fetch "Favourite Publishers" for the user with the provided ID
         Set<UserDTO> userFavPublishers = getUserFollowing(userId);
 
-        // extract only the IDs from the userDTO objects to avoid nested for loops later on
+        // extract only the IDs from the userDTO objects to avoid nested loops later on
         Set<Long> userFavPublisherIDs = userFavPublishers
                 .stream().map(user -> user.getId()).collect(Collectors.toSet());
 
@@ -59,7 +58,7 @@ public class UserServiceImpl implements UserService {
                 }
             }
         }
-
+        // return union of FavouritePublishers & FavouriteGenres
         Set<PostDto> result = new HashSet<>(postsFromDesiredGenres);
         result.addAll(postsFromDesiredPublishers);
 
