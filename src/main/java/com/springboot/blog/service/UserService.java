@@ -21,4 +21,6 @@ public interface UserService {
     Set<UserDTO> getUserFollowing(Long user);
 
     Set<UserDTO> getAllUsers();
+
+    UserDTO findUserByUsername(String username);
 }

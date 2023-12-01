@@ -84,7 +84,6 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-
     @Override
     public void follow(UserEntity currentUser, UserEntity targetUser) {
         currentUser.getFollowing().add(targetUser);
@@ -138,6 +137,14 @@ public class UserServiceImpl implements UserService {
         }
 
         return userDTOs;
+    }
+
+    @Override
+    public UserDTO findUserByUsername(String username) {
+        UserEntity foundUser = userRepository.findByUsername(username).orElseThrow(
+                () -> new BlogAPIException("did not find the username: " + username));
+        UserDTO userDTO = mapUserToDTO(foundUser);
+        return userDTO;
     }
 
     private UserDTO mapUserToDTO(UserEntity user) {
