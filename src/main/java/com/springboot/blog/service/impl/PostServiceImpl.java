@@ -62,25 +62,18 @@ public class PostServiceImpl implements PostService {
 
         // Get the current user
         UserEntity currentUser = getCurrentUser();
-
         // Set the user in the post
         post.setPublisherID(currentUser);
-
-        // Detach the user entity
-        entityManager.detach(currentUser);
+        // entityManager.detach(currentUser);  // Detach the user entity
 
         // Add the post to the user's set of posts
         currentUser.getPosts().add(post);
-
         // Perform profanity check
         post = profanityService.profanityMarker(post);
-
-        // Merge the post to reattach it
-        post = entityManager.merge(post);
+        // post = entityManager.merge(post);   // Merge the post to reattach it
 
         // Save the post
         Post newPost = postRepository.save(post);
-
         // convert entity to DTO
         PostDto postResponse = mapToDTO(newPost);
         return postResponse;
@@ -142,20 +135,64 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
+    public void deletePostById(long postId, String username) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+        UserEntity user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BlogAPIException("Was not able to find user: " + username));
+
+        // Update bidirectional relationship
+        user.getPosts().remove(post);
+        user.getLikedPosts().remove(post);
+        user.getSharedPosts().removeIf(userPostId -> userPostId.equals(postId));
+        user.getReportedPosts().remove(post);
+        // Save the user to update the relationship
+        userRepository.save(user);
+        // Delete the post & persist to the database
+        postRepository.delete(post);
+        evictPostCache(postId);
+    }
+
+    @Override
     @CacheEvict(cacheNames = "posts", allEntries = true)
-    public void incrementLikes(Long postId) {
+    public void incrementLikes(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
+        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
+                () -> new BlogAPIException("was not able to find: " + username));
+        currUser.getLikedPosts().add(post);
         post.setLikesCount(post.getLikesCount() + 1);
+        userRepository.save(currUser);
         postRepository.save(post);
         evictPostCache(postId);
     }
 
     @Override
-    public void incrementShares(Long postId) {
+    public void incrementShares(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
+        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
+                () -> new BlogAPIException("was not able to find: " + username));
+        currUser.getSharedPosts().add(post);
         post.setShareCount(post.getShareCount() + 1);
+        userRepository.save(currUser);
+        postRepository.save(post);
+        evictPostCache(postId);
+    }
+
+    @Override
+    // might need concurrent lookup for efficiency
+    public void reportPost(Long postId, String username) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
+
+        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
+                () -> new BlogAPIException("Did not find username in the db: " + username));
+
+        currUser.getReportedPosts().add(post); // add postId to the getReportedPosts set
+        post.setNumOfReports(post.getNumOfReports() + 1); // increment # of reports for post
+        userRepository.save(currUser);
         postRepository.save(post);
         evictPostCache(postId);
     }
@@ -168,37 +205,6 @@ public class PostServiceImpl implements PostService {
                 .map(post -> mapToDTO(post))
                 .collect(Collectors.toSet());
         return postDTOs;
-    }
-
-    @Override
-    public void reportPost(Long postId, String username) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-
-        // Logic to validate that user is not the owner of this blog
-
-        // Logic to validate that the user has not already reported this blog
-
-        post.setNumOfReports(post.getNumOfReports() + 1);
-        postRepository.save(post);
-        evictPostCache(postId);
-    }
-
-    @Override
-    public void deletePostById(long postId) {
-        // get post by id from the database
-        Post post = postRepository.findById(postId).orElseThrow(
-                () -> new ResourceNotFoundException("Post", "id", postId));
-
-        // Remove the post from the user's set of posts
-        UserEntity user = post.getPublisherID();
-        user.getPosts().remove(post);
-
-        // Save the user to update the relationship
-        userRepository.save(user);
-
-        // Delete the post
-        postRepository.delete(post);
     }
 
     private PostDto mapToDTO(Post post){

@@ -52,5 +52,29 @@ public class UserEntity implements Serializable {
     @ManyToMany(mappedBy = "followers")
     private Set<UserEntity> following = new HashSet<>();
 
+    @ManyToMany
+    @JoinTable(
+            name = "reported_posts",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id")
+    )
+    private Set<Post> reportedPosts = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "liked_posts",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id")
+    )
+    private Set<Post> likedPosts = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "shared_posts",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id")
+    )
+    private Set<Post> sharedPosts = new HashSet<>();
+
     private List<String> favBlogGenres;
 }

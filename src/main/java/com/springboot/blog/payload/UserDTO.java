@@ -27,9 +27,15 @@ public class UserDTO implements Serializable{
 
     private Set<RoleEntity> roles;
 
-    private Set<PostDto> posts = new HashSet<>();
+    private Set<Long> posts = new HashSet<>();
 
     private Set<FollowerDto> followers = new HashSet<>();
 
     private Set<FollowingDto> following = new HashSet<>();
+
+    private Set<Long> reportedPosts = new HashSet<>();
+
+    private Set<Long> sharedPosts = new HashSet<>();
+
+    private Set<Long> likedPosts = new HashSet<>();
 }

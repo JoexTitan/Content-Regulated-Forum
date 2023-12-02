@@ -16,11 +16,11 @@ public interface PostService {
 
     void reportPost(Long postId, String username);
 
-    void deletePostById(long id);
+    void deletePostById(long id, String username);
 
-    void incrementLikes(Long postId);
+    void incrementLikes(Long postId, String username);
 
-    void incrementShares(Long postId);
+    void incrementShares(Long postId, String username);
 
     Set<PostDto> getPostByPublisherId(long publisherId);
 }

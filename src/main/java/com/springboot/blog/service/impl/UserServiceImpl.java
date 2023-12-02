@@ -155,10 +155,9 @@ public class UserServiceImpl implements UserService {
         userDTO.setEmail(user.getEmail());
         userDTO.setFavBlogGenres(user.getFavBlogGenres());
         userDTO.setRoles(user.getRoles());
-
-        // closes off circular references error due to ManyToMany / ManyToOne Mapping
+        // closes off circular references errors caused by bidirectional mappings
         userDTO.setPosts(user.getPosts().stream()
-                .map(post -> modelMapper.map(post, PostDto.class))
+                .map(post -> post.getId())
                 .collect(Collectors.toSet()));
 
         userDTO.setFollowers(user.getFollowers().stream()
@@ -169,6 +168,43 @@ public class UserServiceImpl implements UserService {
                 .map(target -> modelMapper.map(target, FollowingDto.class))
                 .collect(Collectors.toSet()));
 
+        userDTO.setReportedPosts(user.getReportedPosts().stream()
+                .map(post -> post.getId())
+                .collect(Collectors.toSet()));
+
+        userDTO.setLikedPosts(user.getLikedPosts().stream()
+                .map(post -> post.getId())
+                .collect(Collectors.toSet()));
+
+        userDTO.setSharedPosts(user.getSharedPosts().stream()
+                .map(post -> post.getId())
+                .collect(Collectors.toSet()));
+
         return userDTO;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

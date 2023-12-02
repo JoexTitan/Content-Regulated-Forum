@@ -47,7 +47,7 @@ public class CommentController {
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
-        LOGGER.info("extracted username from token: {}", username);
+        LOGGER.info("extracted username from the token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToComment(username, postId)) {
             throw new BlogAPIException("You cannot comment on your own post");
@@ -135,12 +135,9 @@ public class CommentController {
     private boolean authorizedToComment(String username, long postId) {
         UserDTO commentPublisher = userService.findUserByUsername(username);
         boolean sameUser = commentPublisher.getPosts()
-                .stream().anyMatch(postDto -> postDto.getId() == postId);
+                .stream().anyMatch(postID -> postID == postId);
 
-        if (sameUser == false) {
-            return true;
-        }
-        return false;
+        return !sameUser;
     }
 
     private boolean authorizedToEdit(String username, long postId, long commentId) {
