@@ -1,5 +1,8 @@
 package com.springboot.blog.service.impl;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
@@ -26,59 +29,62 @@ public class UserServiceImpl implements UserService {
     private final NowTrendingService nowTrendingService;
     @Override
     public Set<PostDto> getRecommendedPosts(long userId) {
-
-        // 1) fetch "Favourite Publishers" for the user with the provided ID
+        Set<PostDto> postsFromDesiredGenres = new HashSet<>();
+        Set<PostDto> postsFromDesiredPublishers = new HashSet<>();
+        // 1) fetching "Favourite Publishers" for the user
         Set<UserDTO> userFavPublishers = getUserFollowing(userId);
 
-        // extract only the IDs from the userDTO objects to avoid nested loops later on
+        // extracting only the IDs from userDTO to avoid nested loops later
         Set<Long> userFavPublisherIDs = userFavPublishers
                 .stream().map(user -> user.getId()).collect(Collectors.toSet());
-
         System.out.println("userFavPublisherIDs: " + userFavPublisherIDs);
 
-        // 2) fetch "Favourite Genres" for the user with the provided ID
+        // 2) fetching "Favourite Genres" for the user with the provided ID
         UserEntity foundUser = userRepository.findById(userId)
                 .orElseThrow(() -> new BlogAPIException("Was not able to find user with ID: " + userId));
 
-        List<String> favGenres = foundUser.getFavBlogGenres();
-
-        // 3) Fetch top 20 weekly posts using nowTrendingService
+        Set<String> favGenres = foundUser.getFavBlogGenres();
+        // 3) fetching top 20 weekly posts using nowTrendingService
         List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(20);
-
-        // 4) Compare data of trending posts with user preferences (publishers, genres, likes, popularity)
-        Set<PostDto> postsFromDesiredGenres = new HashSet<>();
-        Set<PostDto> postsFromDesiredPublishers = new HashSet<>();
+        // 4) comparing data of trending posts with user preferences (genres & post tags)
         for (PostDto post: trendyPosts) {
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
                 postsFromDesiredPublishers.add(post);
                 System.out.println("Post added to user feed: ID-" + post.getId());
             }
-            for (String tag: post.getTags()) {
-                if (favGenres.contains(tag)) {
-                    postsFromDesiredGenres.add(post);
+            for (String tag : post.getTags()) {
+                for (String favGenreString : favGenres) {
+                    // Parsing the JSON string into a JsonObject
+                    JsonObject favGenreObject = JsonParser.parseString(favGenreString).getAsJsonObject();
+
+                    JsonElement genreElement = favGenreObject.get("favBlogGenres");
+                    if (genreElement != null && genreElement.isJsonPrimitive()) {
+                        String genre = genreElement.getAsString();
+                        if (tag.equals(genre)) {
+                            postsFromDesiredGenres.add(post);
+                            System.out.println("Post added to user feed from fav genre: ID-" + post.getId());
+                            break; // No need to continue checking other genres
+                        }
+                    }
                 }
             }
         }
         // return union of FavouritePublishers & FavouriteGenres
         Set<PostDto> result = new HashSet<>(postsFromDesiredGenres);
         result.addAll(postsFromDesiredPublishers);
-
-        return result;
+        return result; // (Union) + (HashSet) we won't see duplicates
     }
 
     @Override
     public void addFavGenres(long userId, String genre) {
         UserEntity foundUser = userRepository.findById(userId).orElseThrow(
                 () -> new BlogAPIException("Was not able to find the user!"));
-
-        List<String> userPreferences = foundUser.getFavBlogGenres();
-
+        Set<String> userPreferences = foundUser.getFavBlogGenres();
         // Check if userPreferences is null and initialize it if needed
         if (userPreferences == null) {
-            userPreferences = new ArrayList<>();
+            userPreferences = new HashSet<>();
             foundUser.setFavBlogGenres(userPreferences);
         }
-
         if (genre != null) {
             userPreferences.add(genre);
             userRepository.save(foundUser);

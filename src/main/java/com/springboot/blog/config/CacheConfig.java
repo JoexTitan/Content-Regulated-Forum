@@ -13,9 +13,10 @@ import org.springframework.context.annotation.Configuration;
 public class CacheConfig {
     @Bean
     public CacheManager cacheManager() {
-        ConcurrentMapCacheManager cacheManager = new ConcurrentMapCacheManager("posts", "comment");
-        cacheManager.setAllowNullValues(false);  // not allowed null values in the cache
-        cacheManager.setStoreByValue(true);      // allowed to store elements by value (deep copy)
+        ConcurrentMapCacheManager cacheManager =
+                new ConcurrentMapCacheManager("posts", "comment");
+        cacheManager.setAllowNullValues(false); // disallow null values in the cache
+        cacheManager.setStoreByValue(true); // allowed to store elements by value
         return cacheManager;
     }
 }

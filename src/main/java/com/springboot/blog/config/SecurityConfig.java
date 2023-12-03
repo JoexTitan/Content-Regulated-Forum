@@ -48,10 +48,7 @@ public class SecurityConfig {
                         authorize
                                 .requestMatchers("/login", "/logout").permitAll()
                                 .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                                .requestMatchers(HttpMethod.POST,  "/api/**").hasAnyRole("ADMIN")
-                                .requestMatchers(HttpMethod.PATCH, "/api/**").hasAnyRole("ADMIN")
-                                .requestMatchers(HttpMethod.DELETE, "/api/**").hasAnyRole("ADMIN")
-                                .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("USER", "ADMIN")
+                                .requestMatchers("/api/**").hasAnyRole("USER", "ADMIN")
                                 .anyRequest().authenticated()
         )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

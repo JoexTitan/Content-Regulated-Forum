@@ -23,7 +23,7 @@ public class UserDTO implements Serializable{
     private String email;
 
     @ElementCollection
-    private List<String> favBlogGenres;
+    private Set<String> favBlogGenres;
 
     private Set<RoleEntity> roles;
 
