@@ -1,6 +1,7 @@
 package com.springboot.blog.filters;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.regex.Pattern;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.blog.exception.BlogAPIException;
@@ -55,6 +56,7 @@ public class RegistrationValidationFilter implements Filter {
             String email = registerDTO.getEmail();
             String username = registerDTO.getUsername();
             String password = registerDTO.getPassword();
+            Set<String> favGenres = registerDTO.getFavGenres();
 
             try {
                 // validate input before allowing the request to proceed
@@ -73,10 +75,15 @@ public class RegistrationValidationFilter implements Filter {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("username already exists or is not of valid format.");
                 }
+
                 if (!isStrongPassword(password)) {
                     // handling an invalid password exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("password is not of valid format or is too weak.");
+                }
+                if (favGenres == null || favGenres.isEmpty()) {
+                    response.setStatus(HttpStatus.BAD_REQUEST.value());
+                    throw new BlogAPIException("please add favGenres to your request body.");
                 } else {
                     // if the input is valid, continue with the request & response chain
                     filterChain.doFilter(wrappedRequest, response);

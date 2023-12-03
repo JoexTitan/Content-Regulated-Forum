@@ -10,7 +10,9 @@ import java.util.Set;
 public interface UserService {
     Set<PostDto> getRecommendedPosts(long userId);
 
-    void addFavGenres(long userId, String genre);
+    void addFavGenres(long userId, UserDTO userDTO);
+
+    void clearAllFavGenres(long userId);
 
     void follow(Long currentUser, Long targetUser);
 

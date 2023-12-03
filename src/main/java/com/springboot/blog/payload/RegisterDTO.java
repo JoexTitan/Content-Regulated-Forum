@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -18,4 +19,5 @@ public class RegisterDTO implements Serializable {
     private String email;
     private String username;
     private String password;
+    private Set<String> favGenres;
 }

@@ -1,8 +1,5 @@
 package com.springboot.blog.service.impl;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
@@ -14,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,25 +43,16 @@ public class UserServiceImpl implements UserService {
         // 3) fetching top 20 weekly posts using nowTrendingService
         List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(20);
         // 4) comparing data of trending posts with user preferences (genres & post tags)
-        for (PostDto post: trendyPosts) {
+        for (PostDto post : trendyPosts) {
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
                 postsFromDesiredPublishers.add(post);
                 System.out.println("Post added to user feed: ID-" + post.getId());
             }
             for (String tag : post.getTags()) {
-                for (String favGenreString : favGenres) {
-                    // Parsing the JSON string into a JsonObject
-                    JsonObject favGenreObject = JsonParser.parseString(favGenreString).getAsJsonObject();
-
-                    JsonElement genreElement = favGenreObject.get("favBlogGenres");
-                    if (genreElement != null && genreElement.isJsonPrimitive()) {
-                        String genre = genreElement.getAsString();
-                        if (tag.equals(genre)) {
-                            postsFromDesiredGenres.add(post);
-                            System.out.println("Post added to user feed from fav genre: ID-" + post.getId());
-                            break; // No need to continue checking other genres
-                        }
-                    }
+                if (favGenres.contains(tag)) {
+                    postsFromDesiredGenres.add(post);
+                    System.out.println("Post added to user feed from fav genre: ID-" + post.getId());
+                    break; // no need to continue checking other genres
                 }
             }
         }
@@ -76,19 +63,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void addFavGenres(long userId, String genre) {
-        UserEntity foundUser = userRepository.findById(userId).orElseThrow(
-                () -> new BlogAPIException("Was not able to find the user!"));
-        Set<String> userPreferences = foundUser.getFavBlogGenres();
-        // Check if userPreferences is null and initialize it if needed
-        if (userPreferences == null) {
-            userPreferences = new HashSet<>();
-            foundUser.setFavBlogGenres(userPreferences);
-        }
-        if (genre != null) {
-            userPreferences.add(genre);
-            userRepository.save(foundUser);
-        }
+    public void addFavGenres(long userId, UserDTO userDTO) {
+        UserEntity foundUser = userRepository.findById(userId)
+                .orElseThrow(() -> new BlogAPIException("Was not able to find the user!"));
+        foundUser.getFavBlogGenres().addAll(userDTO.getFavBlogGenres());
+        userRepository.save(foundUser);
+    }
+
+    @Override
+    public void clearAllFavGenres(long userId) {
+        UserEntity foundUser = userRepository.findById(userId)
+                .orElseThrow(() -> new BlogAPIException("Was not able to find the user!"));
+        foundUser.setFavBlogGenres(new HashSet<>());
+        userRepository.save(foundUser);
     }
 
     @Override

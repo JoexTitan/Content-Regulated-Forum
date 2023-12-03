@@ -76,5 +76,6 @@ public class UserEntity implements Serializable {
     )
     private Set<Post> sharedPosts = new HashSet<>();
 
+    @ElementCollection
     private Set<String> favBlogGenres;
 }

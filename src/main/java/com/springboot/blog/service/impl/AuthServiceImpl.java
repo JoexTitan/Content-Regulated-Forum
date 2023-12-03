@@ -48,6 +48,10 @@ public class AuthServiceImpl implements AuthService {
         newUser.setUsername(registerDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
         newUser.setFavBlogGenres(new HashSet<>());
+        // Check for null before checking if it's empty
+        if (registerDTO.getFavGenres() != null && !registerDTO.getFavGenres().isEmpty()) {
+            newUser.getFavBlogGenres().addAll(registerDTO.getFavGenres());
+        }
 
         Set<RoleEntity> role = new HashSet<>();
         role.add(roleRepository.findByName("ROLE_USER").get());

@@ -92,8 +92,8 @@ public class UserController {
 
     @PostMapping("/{userId}/preferences")
     public ResponseEntity<String> addFavGenres(@PathVariable Long userId,
-                                               @RequestBody String genre, HttpServletRequest request) {
-        LOGGER.info("UserController.addFavGenres currentUserId: {}, genre: {}", userId, genre);
+                                               @RequestBody UserDTO userDTO, HttpServletRequest request) {
+        LOGGER.info("UserController.addFavGenres currentUserId: {}", userId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
             throw new BlogAPIException("The provided jwt token is not valid");
@@ -108,15 +108,39 @@ public class UserController {
             throw new BlogAPIException("You cannot add blog preferences on behalf of someone else");
         }
         // check if the currUser follows targetUser
-        boolean genreAlreadyPresent = authenticUser.getFavBlogGenres().stream().anyMatch(favGenre -> favGenre.equals(genre));
+        boolean genreAlreadyPresent = userDTO.getFavBlogGenres().stream()
+                .anyMatch(newGenre -> authenticUser.getFavBlogGenres().contains(newGenre));
         if (genreAlreadyPresent) {
             throw new BlogAPIException("You already added this genre to your blog preferences");
         }
 
-        userService.addFavGenres(userId, genre);
+        userService.addFavGenres(userId, userDTO);
         return ResponseEntity.status(HttpStatus.OK)
-                .header("state", "added preference")
-                .body(("Added genre successfully to user #ID-" + userId));
+                .header("state", "added preferences")
+                .body(("Added preferences successfully for user #ID-" + userId));
+    }
+
+    @DeleteMapping("/{userId}/preferences")
+    public ResponseEntity<String> clearAllFavGenres(@PathVariable Long userId,
+                                               @RequestBody UserDTO userDTO, HttpServletRequest request) {
+        LOGGER.info("UserController.addFavGenres currentUserId: {}", userId);
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BlogAPIException("The provided jwt token is not valid");
+        }
+        // extract username from token to check authorizations
+        String username = jwtTokenProvider.extractUsername(token);
+        LOGGER.info("extracted username from token: {}", username);
+
+        UserDTO authenticUser = userService.findUserByUsername(username);
+        // check if authenticUserID == currentUserId
+        if (!authenticUser.getId().equals(userId)) {
+            throw new BlogAPIException("You cannot remove preferences on behalf of someone else");
+        }
+        userService.clearAllFavGenres(userId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("state", "removed preferences")
+                .body(("removed blog preferences successfully for user #ID-" + userId));
     }
 
     @GetMapping("/{userId}/followers")
