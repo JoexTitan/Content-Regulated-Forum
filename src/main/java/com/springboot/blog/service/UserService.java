@@ -12,9 +12,9 @@ public interface UserService {
 
     void addFavGenres(long userId, String genre);
 
-    void follow(UserEntity currentUser, UserEntity targetUser);
+    void follow(Long currentUser, Long targetUser);
 
-    void unfollow(UserEntity currentUser, UserEntity targetUser);
+    void unfollow(Long currentUser, Long targetUser);
 
     Set<UserDTO> getUserFollowers(Long user);
 

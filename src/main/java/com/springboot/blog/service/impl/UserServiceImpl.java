@@ -2,6 +2,7 @@ package com.springboot.blog.service.impl;
 
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
+import com.springboot.blog.exception.ResourceNotFoundException;
 import com.springboot.blog.payload.*;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.NowTrendingService;
@@ -85,19 +86,27 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void follow(UserEntity currentUser, UserEntity targetUser) {
-        currentUser.getFollowing().add(targetUser);
-        targetUser.getFollowers().add(currentUser);
-        userRepository.save(currentUser);
-        userRepository.save(targetUser);
+    public void follow(Long currentUserID, Long targetUserID) {
+        UserEntity currUserObj =  userRepository.findById(currentUserID).orElseThrow(
+                () -> new ResourceNotFoundException("currentUserID", "ID", currentUserID));
+        UserEntity targetUserObj =  userRepository.findById(targetUserID).orElseThrow(
+                () -> new ResourceNotFoundException("targetUserID", "ID", targetUserID));
+        currUserObj.getFollowing().add(targetUserObj);
+        targetUserObj.getFollowers().add(currUserObj);
+        userRepository.save(currUserObj);
+        userRepository.save(targetUserObj);
     }
 
     @Override
-    public void unfollow(UserEntity currentUser, UserEntity targetUser) {
-        currentUser.getFollowing().remove(targetUser);
-        targetUser.getFollowers().remove(currentUser);
-        userRepository.save(currentUser);
-        userRepository.save(targetUser);
+    public void unfollow(Long currentUserID, Long targetUserID) {
+        UserEntity currUserObj =  userRepository.findById(currentUserID).orElseThrow(
+                () -> new ResourceNotFoundException("currentUserID", "ID", currentUserID));
+        UserEntity targetUserObj =  userRepository.findById(targetUserID).orElseThrow(
+                () -> new ResourceNotFoundException("targetUserID", "ID", targetUserID));
+        currUserObj.getFollowing().remove(targetUserObj);
+        targetUserObj.getFollowers().remove(currUserObj);
+        userRepository.save(currUserObj);
+        userRepository.save(targetUserObj);
     }
 
     @Override

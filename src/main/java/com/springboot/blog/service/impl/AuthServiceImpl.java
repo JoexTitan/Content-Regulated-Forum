@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,11 +34,8 @@ public class AuthServiceImpl implements AuthService {
     public String login(LoginDto loginDto) {
         // Created authentication object to add to the SecurityContextHolder
         Authentication authenticated = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
-        );
-
+                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authenticated);
-
         return "Authenticated Successfully: Bearer " + jwtTokenProvider.generateToken(authenticated);
     }
 
@@ -49,6 +47,7 @@ public class AuthServiceImpl implements AuthService {
         newUser.setEmail(registerDTO.getEmail());
         newUser.setUsername(registerDTO.getUsername());
         newUser.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+        newUser.setFavBlogGenres(new ArrayList<>());
 
         Set<RoleEntity> role = new HashSet<>();
         role.add(roleRepository.findByName("ROLE_USER").get());
