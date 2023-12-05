@@ -9,9 +9,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class SentimentAnalysisController {
 
+    private final SentimentAnalysisService sentimentAnalysisService;
     @Autowired
-    private SentimentAnalysisService sentimentAnalysisService;
-    @PostMapping("/analyze-sentiment")
+    public SentimentAnalysisController(SentimentAnalysisService sentimentAnalysisService) {
+        this.sentimentAnalysisService = sentimentAnalysisService;
+    }
+
+    @PostMapping("/analyze-sentiment") // POC for the profanity filter classification
     public ResponseEntity<String> analyzeSentiment(@RequestBody String text) {
         String sentiment = sentimentAnalysisService.analyzeSentiment(text);
         return ResponseEntity.ok("Sentiment: " + sentiment);

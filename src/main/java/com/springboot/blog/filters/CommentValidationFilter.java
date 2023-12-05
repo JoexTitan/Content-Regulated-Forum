@@ -27,7 +27,8 @@ public class CommentValidationFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse,
+                         FilterChain filterChain) throws IOException, ServletException {
 
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse response = (HttpServletResponse) servletResponse;
@@ -35,11 +36,10 @@ public class CommentValidationFilter implements Filter {
         // Check if the request URL matches the registration endpoint
         if (isCommentEndpoint(request.getRequestURI())) {
             // Wrap the request to make it readable multiple times
-            CachedBodyHttpServletRequestWrapper wrappedRequest = new CachedBodyHttpServletRequestWrapper(request);
-
+            CachedBodyHttpServletRequestWrapper wrappedRequest =
+                    new CachedBodyHttpServletRequestWrapper(request);
             // Get the request body as a byte array
             byte[] requestBody = wrappedRequest.getBody();
-
             // Check if the request body is empty
             if (requestBody.length == 0) {
                 // Handle the case where the request body is empty
@@ -59,17 +59,14 @@ public class CommentValidationFilter implements Filter {
             try {
                 // validate input before allowing the request to proceed
                 if (!isNameValid(name)) {
-                    // handling invalid name exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("the provided name is blank or is not of valid format.");
                 }
                 if (!isEmailValid(email)) {
-                    // handling invalid email exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("user email is blank or does not exist in the system.");
                 }
                 if (!isBodyValid(msgTxt)) {
-                    // handling invalid username exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("the comment body is blank or is not of valid format.");
                 } else {
@@ -90,8 +87,7 @@ public class CommentValidationFilter implements Filter {
     }
 
     @Override
-    public void destroy() {
-    }
+    public void destroy() {}
 
     // Regular expression pattern to match the dynamic part of the comment URL
     private static final String POSTS_COMMENTS_PATTERN = "^/api/posts/\\d+/comments$";

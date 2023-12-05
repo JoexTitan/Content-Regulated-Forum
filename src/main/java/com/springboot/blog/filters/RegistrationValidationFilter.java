@@ -36,10 +36,8 @@ public class RegistrationValidationFilter implements Filter {
         if (isRegistrationEndpoint(request.getRequestURI())) {
             // Wrap the request to make it readable multiple times
             CachedBodyHttpServletRequestWrapper wrappedRequest = new CachedBodyHttpServletRequestWrapper(request);
-
             // Get the request body as a byte array
             byte[] requestBody = wrappedRequest.getBody();
-
             // Check if the request body is empty
             if (requestBody.length == 0) {
                 // Handle the case where the request body is empty
@@ -61,23 +59,19 @@ public class RegistrationValidationFilter implements Filter {
             try {
                 // validate input before allowing the request to proceed
                 if (!isNameValid(name)) {
-                    // handling invalid name exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("the provided name is not of valid format.");
                 }
                 if (!isValidEmail(email)) {
-                    // handling invalid email exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("email already exists or is not of valid format.");
                 }
                 if (!isValidUsername(username)) {
-                    // handling invalid username exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("username already exists or is not of valid format.");
                 }
 
                 if (!isStrongPassword(password)) {
-                    // handling an invalid password exception
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
                     throw new BlogAPIException("password is not of valid format or is too weak.");
                 }
