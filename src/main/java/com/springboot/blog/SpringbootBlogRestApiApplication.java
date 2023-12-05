@@ -19,10 +19,7 @@ public class SpringbootBlogRestApiApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(SpringbootBlogRestApiApplication.class, args);
-		// Create an instance of ModelMapper
 		ModelMapper modelMapper = new ModelMapper();
-
-		// Get the configuration and set the matching strategy
 		Configuration configuration = modelMapper.getConfiguration();
 		configuration.setMatchingStrategy(MatchingStrategies.STRICT);
 	}

@@ -21,7 +21,6 @@ public class JwtTokenProvider {
     @Value("${app.jwt-expiration-milliseconds}")
     private String jwtExpiration;
 
-    // method for generating the jwt token
     public String generateToken(Authentication authentication) {
         String username = authentication.getName();
         Instant currentDate = Instant.now();
@@ -34,7 +33,6 @@ public class JwtTokenProvider {
                 .signWith(secretKey())
                 .compact();
 
-//      System.out.println("\n\n\nGENERATED TOKEN: --> " + token);
         return token;
     }
 
@@ -44,7 +42,6 @@ public class JwtTokenProvider {
         );
     }
 
-    // extracting username from Jwt Token
     public String extractUsername(String token) {
         Claims claims = Jwts.parser()
                 .setSigningKey(secretKey())
@@ -85,12 +82,10 @@ public class JwtTokenProvider {
     }
     public String getTokenFromHeader(HttpServletRequest request) {
         String BearerToken = request.getHeader("Authorization");
-
         if (StringUtils.hasText(BearerToken) && BearerToken.startsWith("Bearer ")) {
             String tokenVal = BearerToken.substring(7,BearerToken.length());
             return tokenVal;
         }
-
         return null;
     }
 }

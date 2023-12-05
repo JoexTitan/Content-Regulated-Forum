@@ -30,7 +30,6 @@ public class MyUserDetailsService implements UserDetailsService {
         Set<GrantedAuthority> userRoles = foundUser.getRoles()
                 .stream().map(role -> new SimpleGrantedAuthority(role.getName())).collect(Collectors.toSet());
 
-
         return new User(foundUser.getUsername(), foundUser.getPassword(), userRoles);
 
     }

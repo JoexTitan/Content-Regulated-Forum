@@ -27,22 +27,22 @@ public class UserServiceImpl implements UserService {
     public Set<PostDto> getRecommendedPosts(long userId) {
         Set<PostDto> postsFromDesiredGenres = new HashSet<>();
         Set<PostDto> postsFromDesiredPublishers = new HashSet<>();
-        // 1) fetching "Favourite Publishers" for the user
+        // fetching "Favourite Publishers" for the user
         Set<UserDTO> userFavPublishers = getUserFollowing(userId);
 
-        // extracting only the IDs from userDTO to avoid nested loops later
+        // extracting IDs from userDTO to avoid nested loops later on
         Set<Long> userFavPublisherIDs = userFavPublishers
                 .stream().map(user -> user.getId()).collect(Collectors.toSet());
         System.out.println("userFavPublisherIDs: " + userFavPublisherIDs);
 
-        // 2) fetching "Favourite Genres" for the user with the provided ID
+        // fetching "Favourite Genres" for the user with the provided ID
         UserEntity foundUser = userRepository.findById(userId)
                 .orElseThrow(() -> new BlogAPIException("Was not able to find user with ID: " + userId));
 
         Set<String> favGenres = foundUser.getFavBlogGenres();
-        // 3) fetching top 20 weekly posts using nowTrendingService
+        // fetching top 20 weekly posts using nowTrendingService
         List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(20);
-        // 4) comparing data of trending posts with user preferences (genres & post tags)
+        // comparing data of trending posts with user preferences (genres & post tags)
         for (PostDto post : trendyPosts) {
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
                 postsFromDesiredPublishers.add(post);
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
         // return union of FavouritePublishers & FavouriteGenres
         Set<PostDto> result = new HashSet<>(postsFromDesiredGenres);
         result.addAll(postsFromDesiredPublishers);
-        return result; // (Union) + (HashSet) we won't see duplicates
+        return result; // (Union) + (HashSet) won't see duplicates
     }
 
     @Override

@@ -9,16 +9,16 @@ import java.util.Optional;
 import java.util.Set;
 
 public interface UserRepository extends JpaRepository<UserEntity,Long> {
+    Boolean existsByEmail(String email);
+
+    Boolean existsByUsername(String username);
+
     Optional<UserEntity> findByEmail(String email);
 
     Optional<UserEntity> findByUsernameOrEmail(String username, String email);
 
     @Query("SELECT u FROM UserEntity u WHERE u.username = :username")
     Optional<UserEntity> findByUsername(@Param("username") String username);
-
-    Boolean existsByUsername(String username);
-
-    Boolean existsByEmail(String email);
 
     @Query(value = "SELECT * FROM users u INNER JOIN user_followers uf ON u.id = uf.follower_id WHERE uf.user_id = :userId", nativeQuery = true)
     Set<UserEntity> findFollowersByUserId(@Param("userId") Long userId);
