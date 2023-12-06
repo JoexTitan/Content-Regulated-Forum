@@ -1,16 +1,15 @@
 package com.springboot.blog.controller;
 
 import com.springboot.blog.aspect.GetExecutionTime;
-import com.springboot.blog.entity.Post;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.jwt.JwtTokenProvider;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 import com.springboot.blog.payload.UserDTO;
-import com.springboot.blog.service.CommentService;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.UserService;
-import com.springboot.blog.utils.AppConstants;
+import com.springboot.blog.utils.AppEnums.AppConstants;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
@@ -40,14 +38,16 @@ public class PostController {
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
         LOGGER.info("extracted username from the token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToInteract(username, postId)) {
-            throw new BlogAPIException("You cannot report your own post");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot report your own post", ErrorCode.CANNOT_INVOKE_ON_OWN);
         }
         // initialize the reportedPosts set to handle NullPointers
         Set<Long> reportedPosts = userService.findUserByUsername(username).getReportedPosts();
@@ -56,7 +56,7 @@ public class PostController {
         }
         boolean targetPostAlreadyReported = reportedPosts.stream().anyMatch(postID -> postID == postId);
         if (targetPostAlreadyReported) {
-            throw new BlogAPIException("You cannot report the same post twice");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "You cannot report the same post twice");
         }
         LOGGER.info("the following user: {}, added a complaint!", username);
         postService.reportPost(postId, username);
@@ -71,14 +71,16 @@ public class PostController {
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
         LOGGER.info("extracted username from the token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToInteract(username, postId)) {
-            throw new BlogAPIException("You cannot like your own post");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot like your own post", ErrorCode.CANNOT_INVOKE_ON_OWN);
         }
         // initialize the likePost set to handle NullPointers
         Set<Long> likedPosts = userService.findUserByUsername(username).getLikedPosts();
@@ -88,7 +90,7 @@ public class PostController {
         // if currUser already liked the post disable their ability to like again
         boolean targetPostAlreadyLiked = likedPosts.stream().anyMatch(postID -> postID == postId);
         if (targetPostAlreadyLiked) {
-            throw new BlogAPIException("You cannot like the same post twice");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "You cannot like the same post twice");
         }
         postService.incrementLikes(postId, username);
         return ResponseEntity.status(HttpStatus.OK)
@@ -102,14 +104,16 @@ public class PostController {
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
         LOGGER.info("extracted username from the token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToInteract(username, postId)) {
-            throw new BlogAPIException("You cannot share your own post");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot promote/share your own post", ErrorCode.CANNOT_INVOKE_ON_OWN);
         }
         // currUser is able to share the same post multiple times
         postService.incrementShares(postId, username);
@@ -122,7 +126,7 @@ public class PostController {
     @GetExecutionTime
     public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto, HttpServletRequest request){
         if (!contentTypeValidator(request)) {
-            throw new BlogAPIException("please provide json body with the request");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "please provide json body with the request");
         }
         return new ResponseEntity<>(postService.createPost(postDto), HttpStatus.CREATED);
     }
@@ -133,12 +137,14 @@ public class PostController {
                                               @PathVariable(name = "id") long id, HttpServletRequest request) {
         LOGGER.info("PostController.updatePost postId: {}", id);
         if (!contentTypeValidator(request)) { // validate delivered content/payload
-            throw new BlogAPIException("Unsupported media type");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -147,7 +153,8 @@ public class PostController {
         Long currUserId = userService.findUserByUsername(username).getId();
         Long actualPostPublisherID = postService.getPostById(id).getPublisherID();
         if (!currUserId.equals(actualPostPublisherID)) {
-            throw new BlogAPIException("You cannot edit posts that are not your own");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot edit posts that are not your own", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         // otherwise allow the currUser to make modifications to their post
         return ResponseEntity.status(HttpStatus.OK)
@@ -162,7 +169,8 @@ public class PostController {
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -171,7 +179,8 @@ public class PostController {
         Long currUserId = userService.findUserByUsername(username).getId();
         Long actualPostPublisherID = postService.getPostById(id).getPublisherID();
         if (!currUserId.equals(actualPostPublisherID)) {
-            throw new BlogAPIException("You cannot delete posts that are not your own");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot delete posts that are not your own", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         // otherwise allow the currUser to proceed & delete their post
         postService.deletePostById(id, username);

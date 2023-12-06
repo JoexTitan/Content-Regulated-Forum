@@ -8,6 +8,7 @@ import com.springboot.blog.payload.UserDTO;
 import com.springboot.blog.service.CommentService;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.UserService;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,25 +39,27 @@ public class CommentController {
                                                     @Valid @RequestBody CommentDto commentDto, HttpServletRequest request) {
         LOGGER.info("CommentController.createComment id: {}", postId);
         if (!contentTypeValidator(request)) { // validate delivered content/payload
-            throw new BlogAPIException("Unsupported media type");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
         LOGGER.info("extracted username from the token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToComment(username, postId)) {
-            throw new BlogAPIException("You cannot comment on your own post");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot comment on your own post", ErrorCode.CANNOT_INVOKE_ON_OWN);
         }
         boolean sameEmailOnFile = userService.findUserByUsername(username).getEmail().equals(commentDto.getEmail());
         if (!sameEmailOnFile) {
             throw new BlogAPIException("You cannot comment on behalf of someone else - choose your own email");
-        }
-        // attached comment body is validated by CommentValidationFilter before transacting
+        } // attached comment body is validated by CommentValidationFilter before transacting
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header("state", "comment added")
                 .body(commentService.createComment(postId, commentDto));
@@ -68,12 +71,14 @@ public class CommentController {
                                                     @Valid @RequestBody CommentDto commentDto, HttpServletRequest request){
         LOGGER.info("CommentController.updateComment postId: {}, commentId: {}", postId, commentId);
         if (!contentTypeValidator(request)) { // validate delivered content/payload
-            throw new BlogAPIException("Unsupported media type");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -81,7 +86,8 @@ public class CommentController {
         boolean sameEmailOnFile = userService
                 .findUserByUsername(username).getEmail().equals(commentDto.getEmail());
         if (!sameEmailOnFile) {
-            throw new BlogAPIException("You cannot comment on behalf of someone else - choose your own email");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot on behalf of someone else", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         if (!authorizedToEdit(username, postId, commentId)) {
             throw new BlogAPIException("You cannot edit comments that are not your own");
@@ -97,19 +103,22 @@ public class CommentController {
                                                 @PathVariable(value = "id") Long commentId, HttpServletRequest request){
         LOGGER.info("CommentController.deleteComment postId: {}, commentId: {}", postId, commentId);
         if (!contentTypeValidator(request)) { // validate delivered content/payload
-            throw new BlogAPIException("Unsupported media type");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
         // extracting token form the headers
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
         LOGGER.info("extracted username from token: {}", username);
         // If authorization fails we will throw an exception
         if (!authorizedToEdit(username, postId, commentId)) {
-            throw new BlogAPIException("You cannot delete comments that are not your own");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot delete comments that are not your own", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         commentService.deleteComment(postId, commentId);
         return ResponseEntity.status(HttpStatus.OK)

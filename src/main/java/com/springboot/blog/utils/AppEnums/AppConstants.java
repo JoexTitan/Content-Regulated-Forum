@@ -1,4 +1,4 @@
-package com.springboot.blog.utils;
+package com.springboot.blog.utils.AppEnums;
 
 public class AppConstants {
 

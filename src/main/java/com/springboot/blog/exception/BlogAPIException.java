@@ -4,21 +4,27 @@ import org.springframework.http.HttpStatus;
 
 public class BlogAPIException extends RuntimeException {
 
-    private final HttpStatus status;
-    private final String message;
+    private HttpStatus status;
+    private String message;
+    private int errorCode;
 
-    // Constructor for cases where only a message is provided
     public BlogAPIException(String message) {
         super(message);
         this.status = HttpStatus.INTERNAL_SERVER_ERROR; // default status
         this.message = message;
     }
 
-    // Constructor for cases where both status and message are provided
     public BlogAPIException(HttpStatus status, String message) {
         super(message);
         this.status = status;
         this.message = message;
+    }
+
+    public BlogAPIException(HttpStatus status, String message, int errorCode) {
+        super(message);
+        this.status = status;
+        this.message = message;
+        this.errorCode = errorCode;
     }
 
     public HttpStatus getStatus() {

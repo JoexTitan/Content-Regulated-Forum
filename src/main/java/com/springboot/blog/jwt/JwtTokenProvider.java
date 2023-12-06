@@ -1,11 +1,13 @@
 package com.springboot.blog.jwt;
 
 import com.springboot.blog.exception.BlogAPIException;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -65,19 +67,24 @@ public class JwtTokenProvider {
 
         } catch (ExpiredJwtException e) {
             // Handle token expiration
-            throw new BlogAPIException("The token is expired!");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The token is expired", ErrorCode.INVALID_JWT_TOKEN);
         } catch (UnsupportedJwtException e) {
             // Handle token Unsupported Jwt Exception
-            throw new BlogAPIException("The token is Unsupported!");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The token is Unsupported", ErrorCode.INVALID_JWT_TOKEN);
         } catch (MalformedJwtException e) {
             // Handle malformed JWT
-            throw new BlogAPIException("The token is malformed!");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The token is malformed", ErrorCode.INVALID_JWT_TOKEN);
         } catch (SignatureException e) {
             // Handle signature-related issues
-            throw new BlogAPIException("The token is not signed!");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The token is not signed", ErrorCode.INVALID_JWT_TOKEN);
         } catch (IllegalArgumentException e) {
             // Handle illegal argument
-            throw new BlogAPIException("The token is illegal!");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The token is illegal", ErrorCode.INVALID_JWT_TOKEN);
         }
     }
     public String getTokenFromHeader(HttpServletRequest request) {

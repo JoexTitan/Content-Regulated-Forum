@@ -7,8 +7,10 @@ import com.springboot.blog.payload.*;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.NowTrendingService;
 import com.springboot.blog.service.UserService;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -37,7 +39,8 @@ public class UserServiceImpl implements UserService {
 
         // fetching "Favourite Genres" for the user with the provided ID
         UserEntity foundUser = userRepository.findById(userId)
-                .orElseThrow(() -> new BlogAPIException("Was not able to find user with ID: " + userId));
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "Was not able to find user with ID: " + userId, ErrorCode.USER_NOT_FOUND));
 
         Set<String> favGenres = foundUser.getFavBlogGenres();
         // fetching top 20 weekly posts using nowTrendingService
@@ -46,12 +49,12 @@ public class UserServiceImpl implements UserService {
         for (PostDto post : trendyPosts) {
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
                 postsFromDesiredPublishers.add(post);
-                System.out.println("Post added to user feed: ID-" + post.getId());
+                System.out.println("Added to feed from fav publisher: Post-" + post.getId());
             }
             for (String tag : post.getTags()) {
                 if (favGenres.contains(tag)) {
                     postsFromDesiredGenres.add(post);
-                    System.out.println("Post added to user feed from fav genre: ID-" + post.getId());
+                    System.out.println("Added to feed from fav genre: Post-" + post.getId());
                     break; // no need to continue checking other genres
                 }
             }
@@ -65,7 +68,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public void addFavGenres(long userId, UserDTO userDTO) {
         UserEntity foundUser = userRepository.findById(userId)
-                .orElseThrow(() -> new BlogAPIException("Was not able to find the user!"));
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "Was not able to find user with ID: " + userId, ErrorCode.USER_NOT_FOUND));
         foundUser.getFavBlogGenres().addAll(userDTO.getFavBlogGenres());
         userRepository.save(foundUser);
     }
@@ -73,7 +77,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public void clearAllFavGenres(long userId) {
         UserEntity foundUser = userRepository.findById(userId)
-                .orElseThrow(() -> new BlogAPIException("Was not able to find the user!"));
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "Was not able to find user with ID: " + userId, ErrorCode.USER_NOT_FOUND));
         foundUser.setFavBlogGenres(new HashSet<>());
         userRepository.save(foundUser);
     }
@@ -143,8 +148,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO findUserByUsername(String username) {
-        UserEntity foundUser = userRepository.findByUsername(username).orElseThrow(
-                () -> new BlogAPIException("did not find the username: " + username));
+        UserEntity foundUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "Was not able to find username: " + username, ErrorCode.USER_NOT_FOUND));
         UserDTO userDTO = mapUserToDTO(foundUser);
         return userDTO;
     }
@@ -157,7 +163,7 @@ public class UserServiceImpl implements UserService {
         userDTO.setEmail(user.getEmail());
         userDTO.setFavBlogGenres(user.getFavBlogGenres());
         userDTO.setRoles(user.getRoles());
-        // closes off circular references errors caused by bidirectional mappings
+        // below we close off circular reference errors caused by bidirectional mapping
         userDTO.setPosts(user.getPosts().stream()
                 .map(post -> post.getId())
                 .collect(Collectors.toSet()));

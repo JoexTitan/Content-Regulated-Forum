@@ -1,11 +1,10 @@
 package com.springboot.blog.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.service.ProfanityService;
 import com.springboot.blog.utils.ProfanityManagerUtil;
-import com.springboot.blog.utils.ProfanityStatus;
+import com.springboot.blog.utils.AppEnums.ProfanityStatus;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -57,7 +56,8 @@ public class ProfanityServiceImpl implements ProfanityService {
             // System.out.println("punctuationPart: " + punctuationPart);
             if (ProfanityManagerUtil.PROFANITY_WORDS.containsKey(wordPart.toLowerCase())) {
                 profanityWordCount += 1;
-                filteredText.append(punctuationPart).append("****").append(" "); // Append punctuation, hide profane word, and spacing
+                // Append punctuation, hide profane word, and spacing
+                filteredText.append(punctuationPart).append("****").append(" ");
                 // System.out.println("filteredText: " + filteredText);
             } else {
                 filteredText.append(word).append(" "); // Append word and spacing
@@ -76,8 +76,7 @@ public class ProfanityServiceImpl implements ProfanityService {
         System.out.println("profanityRatio: " + profanityRatio + " #### Thresholds: P(0.04) | N(0.03) | N(0.02)");
 
         // If the blog has too much profanity || has bad reputation we will block it
-        if (!post.getPostSentiment().isEmpty()) { // to avoid NullException
-
+        if (!post.getPostSentiment().isEmpty()) { // to avoid NullPointerException
             if ("Negative".equals(post.getPostSentiment())
                     && profanityRatio >= NEGATIVE_PROFANITY_THRESHOLD) {
                 // blocked the post regardless of reputation / popularity
@@ -85,14 +84,10 @@ public class ProfanityServiceImpl implements ProfanityService {
 
             } else if ("Neutral".equals(post.getPostSentiment())
                     && profanityRatio >= NEUTRAL_PROFANITY_THRESHOLD) {
-
-                // VERIFY REPUTATION & OTHER METRICS ******************
                 post.setProfanityStatus(ProfanityStatus.BLOCKED);
 
             } else if ("Positive".equals(post.getPostSentiment())
                     && profanityRatio >= POSITIVE_PROFANITY_THRESHOLD) {
-
-                // VERIFY REPUTATION & OTHER METRICS ******************
                 post.setProfanityStatus(ProfanityStatus.BLOCKED);
 
             } else {

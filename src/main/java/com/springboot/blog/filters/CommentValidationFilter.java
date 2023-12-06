@@ -7,6 +7,7 @@ import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.payload.CommentDto;
 import com.springboot.blog.payload.RegisterDTO;
 import com.springboot.blog.repository.UserRepository;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import com.springboot.blog.utils.CachedBodyHttpServletRequestWrapper;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,15 +61,21 @@ public class CommentValidationFilter implements Filter {
                 // validate input before allowing the request to proceed
                 if (!isNameValid(name)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("the provided name is blank or is not of valid format.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "the provided name is blank or is not of valid format",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
                 if (!isEmailValid(email)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("user email is blank or does not exist in the system.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "user email is blank or does not exist in the system",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
                 if (!isBodyValid(msgTxt)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("the comment body is blank or is not of valid format.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "the comment body is blank or is not of valid format",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 } else {
                     // if the input is valid, continue with the request & response chain
                     filterChain.doFilter(wrappedRequest, response);

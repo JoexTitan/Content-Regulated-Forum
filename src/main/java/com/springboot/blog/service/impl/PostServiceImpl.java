@@ -10,7 +10,8 @@ import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.ProfanityService;
-import com.springboot.blog.utils.ProfanityStatus;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
+import com.springboot.blog.utils.AppEnums.ProfanityStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -24,7 +25,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -46,7 +47,9 @@ public class PostServiceImpl implements PostService {
 
     private UserEntity getCurrentUser() {
         String Username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByUsername(Username).orElseThrow(() -> new RuntimeException("Current user not found"));
+        return userRepository.findByUsername(Username)
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "the user was not found with username: " + Username, ErrorCode.USER_NOT_FOUND));
     }
 
     @Override
@@ -113,10 +116,12 @@ public class PostServiceImpl implements PostService {
     public PostDto getPostById(long id) {
         Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id));
+
         if (Objects.equals(post.getProfanityStatus(), ProfanityStatus.ACTIVE)) {
             return mapToDTO(post);
         } else {
-            throw new BlogAPIException("The current post has been blocked due to its inappropriate content.");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The post has been blocked due to its inappropriate content.", ErrorCode.POST_BLOCKED);
         }
     }
 
@@ -140,7 +145,8 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new BlogAPIException("Was not able to find user: " + username));
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "the user was not found with username: " + username, ErrorCode.USER_NOT_FOUND));
 
         // Update bidirectional relationship
         user.getPosts().remove(post);
@@ -159,8 +165,9 @@ public class PostServiceImpl implements PostService {
     public void incrementLikes(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
-        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
-                () -> new BlogAPIException("was not able to find: " + username));
+        UserEntity currUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "the user was not found with username: " + username, ErrorCode.USER_NOT_FOUND));
         currUser.getLikedPosts().add(post);
         post.setLikesCount(post.getLikesCount() + 1);
         userRepository.save(currUser);
@@ -172,8 +179,9 @@ public class PostServiceImpl implements PostService {
     public void incrementShares(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
-        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
-                () -> new BlogAPIException("was not able to find: " + username));
+        UserEntity currUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "the user was not found with username: " + username, ErrorCode.USER_NOT_FOUND));
         currUser.getSharedPosts().add(post);
         post.setShareCount(post.getShareCount() + 1);
         userRepository.save(currUser);
@@ -186,10 +194,9 @@ public class PostServiceImpl implements PostService {
     public void reportPost(Long postId, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
-
-        UserEntity currUser = userRepository.findByUsername(username).orElseThrow(
-                () -> new BlogAPIException("Did not find username in the db: " + username));
-
+        UserEntity currUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
+                        "the user was not found with username: " + username, ErrorCode.USER_NOT_FOUND));
         currUser.getReportedPosts().add(post); // add postId to the getReportedPosts set
         post.setNumOfReports(post.getNumOfReports() + 1); // increment # of reports for post
         userRepository.save(currUser);
@@ -200,8 +207,7 @@ public class PostServiceImpl implements PostService {
     @Override
     public Set<PostDto> getPostByPublisherId(long publisherId) {
         Set<Post> posts = postRepository.findAllPostsByPublisher(publisherId);
-        Set<PostDto> postDTOs = posts
-                .stream()
+        Set<PostDto> postDTOs = posts.stream()
                 .map(post -> mapToDTO(post))
                 .collect(Collectors.toSet());
         return postDTOs;

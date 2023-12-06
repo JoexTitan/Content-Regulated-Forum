@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.payload.RegisterDTO;
 import com.springboot.blog.repository.UserRepository;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import com.springboot.blog.utils.CachedBodyHttpServletRequestWrapper;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,24 +61,34 @@ public class RegistrationValidationFilter implements Filter {
                 // validate input before allowing the request to proceed
                 if (!isNameValid(name)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("the provided name is not of valid format.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "the provided name is not of valid format",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
                 if (!isValidEmail(email)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("email already exists or is not of valid format.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "email already exists or is not of valid format",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
                 if (!isValidUsername(username)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("username already exists or is not of valid format.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "username already exists or is not of valid format",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
 
                 if (!isStrongPassword(password)) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("password is not of valid format or is too weak.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "password is not of valid format or is too weak",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 }
                 if (favGenres == null || favGenres.isEmpty()) {
                     response.setStatus(HttpStatus.BAD_REQUEST.value());
-                    throw new BlogAPIException("please add favGenres to your request body.");
+                    throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                            "please add favGenres to your request body",
+                            ErrorCode.DATA_VALIDATION_ERROR);
                 } else {
                     // if the input is valid, continue with the request & response chain
                     filterChain.doFilter(wrappedRequest, response);

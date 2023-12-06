@@ -7,12 +7,14 @@ import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.UserDTO;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.UserService;
+import com.springboot.blog.utils.AppEnums.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,13 +30,36 @@ public class UserController {
     private final UserRepository userRepository;
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
+    @GetMapping("/{userId}/feed")
+    public ResponseEntity<Set<PostDto>> getRecommendedPosts(@PathVariable Long userId, HttpServletRequest request) {
+        LOGGER.info("UserController.getRecommendedPosts currentUserId: {}", userId);
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
+        }
+        // extract username from token to check authorizations
+        String username = jwtTokenProvider.extractUsername(token);
+        LOGGER.info("extracted username from token: {}", username);
+        UserDTO authenticUser = userService.findUserByUsername(username);
+        // check if authenticUserID == currentUserId
+        if (!authenticUser.getId().equals(userId)) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot request post feed that is not your own", ErrorCode.CANNOT_BE_DIFF_USER);
+        }
+        return ResponseEntity.status(HttpStatus.OK)
+                .header("state", "feed requested")
+                .body(userService.getRecommendedPosts(userId));
+    }
+
     @PostMapping("/{currentUserId}/follow/{targetUserId}")
     public ResponseEntity<String> follow(@PathVariable Long currentUserId,
                                          @PathVariable Long targetUserId, HttpServletRequest request) {
         LOGGER.info("UserController.follow currentUserId: {}, targetUserId: {}", currentUserId, targetUserId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -43,14 +68,15 @@ public class UserController {
         UserDTO authenticUser = userService.findUserByUsername(username);
         // check if authenticUserID == currentUserId
         if (!authenticUser.getId().equals(currentUserId)) {
-            throw new BlogAPIException("You cannot follow on behalf of someone else");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot follow on behalf of someone else", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         // check if the currUser follows targetUser
         boolean alreadyFollowing = authenticUser.getFollowing().stream()
                 .anyMatch(followDto -> followDto.getId().equals(targetUserId));
 
         if (alreadyFollowing) {
-            throw new BlogAPIException("You cannot follow the same person twice");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST, "You cannot follow the same person twice");
         }
 
         userService.follow(currentUserId, targetUserId);
@@ -65,7 +91,8 @@ public class UserController {
         LOGGER.info("UserController.unfollow currentUserId: {}, targetUserId: {}", currentUserId, targetUserId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -74,14 +101,16 @@ public class UserController {
         UserDTO authenticUser = userService.findUserByUsername(username);
         // check if authenticUserID == currentUserId
         if (!authenticUser.getId().equals(currentUserId)) {
-            throw new BlogAPIException("You cannot unfollow on behalf of someone else");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot unfollow on behalf of someone else", ErrorCode.CANNOT_BE_DIFF_USER);
         }
         // check if the currUser follows targetUser
         boolean alreadyFollowing = authenticUser.getFollowing().stream()
                 .anyMatch(followDto -> followDto.getId().equals(targetUserId));
 
         if (!alreadyFollowing) {
-            throw new BlogAPIException("You cannot unfollow a person you didn't subscribe to");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot unfollow a person you didn't subscribe to");
         }
 
         userService.unfollow(currentUserId, targetUserId);
@@ -96,7 +125,8 @@ public class UserController {
         LOGGER.info("UserController.addFavGenres currentUserId: {}", userId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -105,7 +135,9 @@ public class UserController {
         UserDTO authenticUser = userService.findUserByUsername(username);
         // check if authenticUserID == currentUserId
         if (!authenticUser.getId().equals(userId)) {
-            throw new BlogAPIException("You cannot add blog preferences on behalf of someone else");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot add blog preferences on behalf of someone else",
+                    ErrorCode.CANNOT_BE_DIFF_USER);
         }
         // check if the currUser follows targetUser
         boolean genreAlreadyPresent = userDTO.getFavBlogGenres().stream()
@@ -126,7 +158,8 @@ public class UserController {
         LOGGER.info("UserController.addFavGenres currentUserId: {}", userId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
-            throw new BlogAPIException("The provided jwt token is not valid");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
         }
         // extract username from token to check authorizations
         String username = jwtTokenProvider.extractUsername(token);
@@ -135,7 +168,9 @@ public class UserController {
         UserDTO authenticUser = userService.findUserByUsername(username);
         // check if authenticUserID == currentUserId
         if (!authenticUser.getId().equals(userId)) {
-            throw new BlogAPIException("You cannot remove preferences on behalf of someone else");
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "You cannot remove preferences on behalf of someone else",
+                    ErrorCode.CANNOT_BE_DIFF_USER);
         }
         userService.clearAllFavGenres(userId);
         return ResponseEntity.status(HttpStatus.OK)
@@ -144,23 +179,35 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/followers")
-    public ResponseEntity<Set<UserDTO>> getAllFollowers(@PathVariable Long userId) {
+    public ResponseEntity<Set<UserDTO>> getAllFollowers(@PathVariable Long userId, HttpServletRequest request) {
+        LOGGER.info("UserController.getAllFollowers currentUserId: {}", userId);
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
+        } // public information for any user to see following & followers of members
         return ResponseEntity.ok(userService.getUserFollowers(userId));
     }
 
     @GetMapping("/{userId}/following")
-    public ResponseEntity<Set<UserDTO>> getAllFollowing(@PathVariable Long userId) {
+    public ResponseEntity<Set<UserDTO>> getAllFollowing(@PathVariable Long userId, HttpServletRequest request) {
+        LOGGER.info("UserController.getAllFollowing currentUserId: {}", userId);
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
+        } // public information for any user to see following & followers of members
         return ResponseEntity.ok(userService.getUserFollowing(userId));
     }
 
     @GetMapping("/members")
-    public ResponseEntity<Set<UserDTO>> getAllUsers() {
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<Set<UserDTO>> getAllUsers(HttpServletRequest request) {
+        String token = jwtTokenProvider.getTokenFromHeader(request);
+        if (token == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BlogAPIException(HttpStatus.BAD_REQUEST,
+                    "The provided jwt token is not valid", ErrorCode.INVALID_JWT_TOKEN);
+        } // private information only for admin users to see & interact with
         return ResponseEntity.ok(userService.getAllUsers());
     }
-
-    @GetMapping("/{userId}/feed")
-    public ResponseEntity<Set<PostDto>> getRecommendedPosts(@PathVariable Long userId) {
-        return ResponseEntity.ok(userService.getRecommendedPosts(userId));
-    }
-
 }
