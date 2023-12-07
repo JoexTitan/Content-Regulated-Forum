@@ -33,7 +33,7 @@ public class SentimentAnalysisController {
     @PostMapping("/analyze") // proof of concept for the profanity filter class
     public ResponseEntity<String> analyzeSentiment(@RequestBody String text, HttpServletRequest request) {
         String contentType = request.getContentType();
-        if (contentType != null && contentType.startsWith("application/json")) {
+        if (contentType == null || !contentType.startsWith("application/json")) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
                     "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }

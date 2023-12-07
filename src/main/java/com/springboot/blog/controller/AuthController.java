@@ -25,7 +25,7 @@ public class AuthController {
     @PostMapping(value = {"/login", "signin"})
     public ResponseEntity<Object> login(@RequestBody LoginDto loginDto, HttpServletRequest request) {
         String contentType = request.getContentType();
-        if (contentType != null && contentType.startsWith("application/json")) {
+        if (contentType == null || !contentType.startsWith("application/json")) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
                     "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         } return ResponseEntity.status(HttpStatus.OK)
@@ -36,7 +36,7 @@ public class AuthController {
     @PostMapping(value = {"/register", "signup"})
     public ResponseEntity<Object> register(@RequestBody RegisterDTO registerDTO, HttpServletRequest request) {
         String contentType = request.getContentType();
-        if (contentType != null && contentType.startsWith("application/json")) {
+        if (contentType == null || !contentType.startsWith("application/json")) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
                     "Unsupported media type", ErrorCode.UNSUPPORTED_MEDIA_TYPE);
         } return ResponseEntity.status(HttpStatus.OK)

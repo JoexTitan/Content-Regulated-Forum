@@ -155,7 +155,7 @@ public class UserController {
     @DeleteMapping("/{userId}/preferences")
     public ResponseEntity<String> clearAllFavGenres(@PathVariable Long userId,
                                                @RequestBody UserDTO userDTO, HttpServletRequest request) {
-        LOGGER.info("UserController.addFavGenres currentUserId: {}", userId);
+        LOGGER.info("UserController.clearAllFavGenres currentUserId: {}", userId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
