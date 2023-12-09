@@ -41,7 +41,7 @@ public class ProfanityServiceImpl implements ProfanityService {
         double publisherRank = reputationService
                 .overallReputationScore(post.getPublisherID().getId());
         // regardless of how good someone's reputation is we will cap bonus allowance at 2%
-        double adjustForPublisherRank = Math.min(publisherRank * 0.01, 0.02);
+        double adjustForPublisherRank = Math.min(publisherRank * 0.005, 0.02);
 
         // dynamic profanity threshold of (2% - 6%) per blog post
         double NEGATIVE_PROFANITY_THRESHOLD = 0.02 + adjustForPublisherRank;

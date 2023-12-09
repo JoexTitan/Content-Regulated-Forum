@@ -47,7 +47,7 @@ public class ReputationServiceImpl implements ReputationService {
         if (posts == null || posts.isEmpty()) {
             return 0.0;
         } // below are individual scores for each metric that build publisher reputation
-        // total achievable reputation score is 40 points since profanity is a deductible
+        // max achievable reputation score is 32.5 points since profanity is a deductible
         double postEngagementScore = Math.min(averagePostEngagement(posts), 25); // likes | shares | comments
         double postFrequencyScore = Math.min(averagePublishFrequency(posts), 2.5); // blog post frequency ratio
         double postProfanityScore = Math.min(averagePostProfanityScore(posts), 7.5); // profanity marker score
