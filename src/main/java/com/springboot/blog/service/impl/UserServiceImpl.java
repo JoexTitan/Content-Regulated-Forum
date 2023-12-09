@@ -1,5 +1,6 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.entity.Post;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
@@ -24,18 +25,19 @@ public class UserServiceImpl implements UserService {
 
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+    private final PostRepository postRepository;
     private final ReputationService reputationService;
     private final NowTrendingService nowTrendingService;
+    private final double DISTINGUISHED_PUBLISHER_THRESHOLD = 19.99;
     @Override
-    // 1) will need user reputation to sort distinguished publishers & break any ties
-    // 2) will need to check posts for followers' followers (friends of friends posts & interests)
     public Set<PostDto> getRecommendedPosts(long userId) {
-        Set<PostDto> postsFromDesiredGenres = new HashSet<>();
-        Set<PostDto> postsFromDesiredPublishers = new HashSet<>();
+        Set<PostDto> userFeedCollection = new HashSet<>();
+        // will store Map<publisherID, publisherRank>
+        Map<Long, Double> publisherReputationMap = new HashMap<>();
         // fetching "Favourite Publishers" for the user
         Set<UserDTO> userFavPublishers = getUserFollowing(userId);
 
-        // extracting IDs from userDTO to avoid nested loops later on
+        // extracting IDs from userDTO to avoid nested loops
         Set<Long> userFavPublisherIDs = userFavPublishers
                 .stream().map(user -> user.getId()).collect(Collectors.toSet());
         System.out.println("userFavPublisherIDs: " + userFavPublisherIDs);
@@ -46,30 +48,42 @@ public class UserServiceImpl implements UserService {
                         "Was not able to find user with ID: " + userId, ErrorCode.USER_NOT_FOUND));
 
         Set<String> favGenres = foundUser.getFavBlogGenres();
-        // fetching top 20 weekly posts using nowTrendingService
-        List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(20);
-        // comparing data of trending posts with user preferences (genres & post tags)
-
+        // fetching top 25 weekly posts using nowTrendingService
+        List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(25);
         for (PostDto post : trendyPosts) {
+            // check if trending posts contain user's fav publishers
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
-                System.out.println("\nPublisherID# " + post.getPublisherID() +
-                        " | RANK: " + reputationService.overallReputationScore(post.getPublisherID()));
-
-                postsFromDesiredPublishers.add(post);
-                System.out.println("Added to feed from fav publisher: Post-" + post.getId());
+                userFeedCollection.add(post);
+                System.out.println("Added post to feed from favourite publisher: Post-" + post.getId());
             }
+            // we will store Map<publisherID, publisherRank> in publisherReputationMap
+            if (publisherReputationMap.containsKey(post.getPublisherID())) {
+                if (publisherReputationMap.get(post.getPublisherID()) > DISTINGUISHED_PUBLISHER_THRESHOLD) {
+                    userFeedCollection.add(post);
+                    System.out.println("Added post to feed from distinguished publisher: Post-" + post.getId());
+                }
+            } else {
+                // if the publisher has not been added to publisherReputationMap we will add him there
+                double publisherRank = reputationService.overallReputationScore(post.getPublisherID());
+                publisherReputationMap.put(post.getPublisherID(), publisherRank);
+                System.out.println("\nPublisherID# " + post.getPublisherID() + " | RANK: " + publisherRank);
+                // if publisher is of high rank we will be updating postsFromDistinguishedPublishers collection
+                if (publisherRank >= DISTINGUISHED_PUBLISHER_THRESHOLD) {;
+                    userFeedCollection.add(post);
+                    System.out.println("Added post to feed from distinguished publisher: Post-" + post.getId());
+                }
+            }
+            // check tags for the publishment & cross validate with user preferences and favourite genres
             for (String tag : post.getTags()) {
                 if (favGenres.contains(tag)) {
-                    postsFromDesiredGenres.add(post);
-                    System.out.println("Added to feed from fav genre: Post-" + post.getId());
+                    userFeedCollection.add(post);
+                    System.out.println("Added post to feed from favourite genre: Post-" + post.getId());
                     break; // no need to continue checking other genres
                 }
             }
         }
-        // return union of FavouritePublishers & FavouriteGenres
-        Set<PostDto> result = new HashSet<>(postsFromDesiredGenres);
-        result.addAll(postsFromDesiredPublishers);
-        return result; // (Union) + (HashSet) won't see duplicates
+        // return union distinct for collected posts
+        return userFeedCollection;
     }
 
     @Override

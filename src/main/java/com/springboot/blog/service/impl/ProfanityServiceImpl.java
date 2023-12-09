@@ -4,6 +4,7 @@ import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.ProfanityService;
+import com.springboot.blog.service.ReputationService;
 import com.springboot.blog.utils.ProfanityManagerUtil;
 import com.springboot.blog.utils.AppEnums.ProfanityStatus;
 import lombok.RequiredArgsConstructor;
@@ -18,14 +19,8 @@ import java.util.*;
 public class ProfanityServiceImpl implements ProfanityService {
 
     private final ModelMapper modelMapper;
+    private final ReputationServiceImpl reputationService;
 
-    // English profanity dictionary from wikipedia
-    // https://en.wikipedia.org/wiki/Category:English_profanity
-
-    // static threshold of (2% - 4%) for blog text per post
-    private static final double NEGATIVE_PROFANITY_THRESHOLD = 0.02;
-    private static final double NEUTRAL_PROFANITY_THRESHOLD  = 0.03;
-    private static final double POSITIVE_PROFANITY_THRESHOLD = 0.04;
     @Override
     public List<PostDto> filterPostProfanity(List<PostDto> postDtoList) {
         List<PostDto> filteredList = new ArrayList<>();
@@ -42,6 +37,17 @@ public class ProfanityServiceImpl implements ProfanityService {
 
     @Override
     public Post profanityMarker(Post post) {
+
+        double publisherRank = reputationService
+                .overallReputationScore(post.getPublisherID().getId());
+        // regardless of how good someone's reputation is we will cap bonus allowance at 2%
+        double adjustForPublisherRank = Math.min(publisherRank * 0.01, 0.02);
+
+        // dynamic profanity threshold of (2% - 6%) per blog post
+        double NEGATIVE_PROFANITY_THRESHOLD = 0.02 + adjustForPublisherRank;
+        double NEUTRAL_PROFANITY_THRESHOLD  = 0.03 + adjustForPublisherRank;
+        double POSITIVE_PROFANITY_THRESHOLD = 0.04 + adjustForPublisherRank;
+
         String[] words = post.getContent().split("\\s+");
         int totalWords = words.length;
         double profanityWordCount = 0;
@@ -74,13 +80,15 @@ public class ProfanityServiceImpl implements ProfanityService {
         post.setContent(filteredText.toString());
         double profanityRatio = (profanityWordCount / totalWords);
 
-        System.out.println("profanityRatio: " + profanityRatio + " #### Thresholds: P(0.04) | N(0.03) | N(0.02)");
+        System.out.println("profanityRatio: " + profanityRatio +
+                " #### Thresholds: Positive("+POSITIVE_PROFANITY_THRESHOLD+")" +
+                " #### Neutral("+NEUTRAL_PROFANITY_THRESHOLD+")" +
+                " #### Negative("+NEGATIVE_PROFANITY_THRESHOLD+")");
 
         // If the blog has too much profanity || has bad reputation we will block it
         if (!post.getPostSentiment().isEmpty()) { // to avoid NullPointerException
             if ("Negative".equals(post.getPostSentiment())
                     && profanityRatio >= NEGATIVE_PROFANITY_THRESHOLD) {
-                // blocked the post regardless of reputation / popularity
                 post.setProfanityStatus(ProfanityStatus.BLOCKED);
 
             } else if ("Neutral".equals(post.getPostSentiment())
@@ -95,7 +103,6 @@ public class ProfanityServiceImpl implements ProfanityService {
                 post.setProfanityStatus(ProfanityStatus.ACTIVE);
             }
         }
-        // return post to invoked instance
-        return post;
+        return post; // return marked post with "Active" or "Blocked" status
     }
 }
