@@ -19,6 +19,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "ORDER BY likes_count DESC, share_count DESC, comment_count DESC LIMIT :numOfPosts", nativeQuery = true)
     List<Post> findMonthlyTrendingPosts(@Param("numOfPosts") int numOfPosts);
 
-    @Query(value = "SELECT * FROM posts WHERE publisher_id = :publisherId", nativeQuery = true)
-    Set<Post> findAllPostsByPublisher(@Param("publisherId") long publisherId);
+    @Query(value = "SELECT * FROM posts WHERE publisher_id = :publisherId ORDER BY publish_date", nativeQuery = true)
+    List<Post> findAllPostsByPublisher(@Param("publisherId") long publisherId);
+
 }

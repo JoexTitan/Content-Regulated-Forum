@@ -205,11 +205,11 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Set<PostDto> getPostByPublisherId(long publisherId) {
-        Set<Post> posts = postRepository.findAllPostsByPublisher(publisherId);
-        Set<PostDto> postDTOs = posts.stream()
+    public List<PostDto> getPostByPublisherId(long publisherId) {
+        List<Post> posts = postRepository.findAllPostsByPublisher(publisherId);
+        List<PostDto> postDTOs = posts.stream()
                 .map(post -> mapToDTO(post))
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
         return postDTOs;
     }
 

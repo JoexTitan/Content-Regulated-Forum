@@ -4,8 +4,10 @@ import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
 import com.springboot.blog.payload.*;
+import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.NowTrendingService;
+import com.springboot.blog.service.ReputationService;
 import com.springboot.blog.service.UserService;
 import com.springboot.blog.utils.AppEnums.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +15,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,8 +24,11 @@ public class UserServiceImpl implements UserService {
 
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+    private final ReputationService reputationService;
     private final NowTrendingService nowTrendingService;
     @Override
+    // 1) will need user reputation to sort distinguished publishers & break any ties
+    // 2) will need to check posts for followers' followers (friends of friends posts & interests)
     public Set<PostDto> getRecommendedPosts(long userId) {
         Set<PostDto> postsFromDesiredGenres = new HashSet<>();
         Set<PostDto> postsFromDesiredPublishers = new HashSet<>();
@@ -46,8 +49,12 @@ public class UserServiceImpl implements UserService {
         // fetching top 20 weekly posts using nowTrendingService
         List<PostDto> trendyPosts = nowTrendingService.getWeeklyTrending(20);
         // comparing data of trending posts with user preferences (genres & post tags)
+
         for (PostDto post : trendyPosts) {
             if (userFavPublisherIDs.contains(post.getPublisherID())) {
+                System.out.println("\nPublisherID# " + post.getPublisherID() +
+                        " | RANK: " + reputationService.overallReputationScore(post.getPublisherID()));
+
                 postsFromDesiredPublishers.add(post);
                 System.out.println("Added to feed from fav publisher: Post-" + post.getId());
             }

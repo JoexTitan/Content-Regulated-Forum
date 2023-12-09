@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -205,7 +206,7 @@ public class PostController {
 
     @GetExecutionTime
     @GetMapping("/publisher/{publisherId}")
-    public ResponseEntity<Set<PostDto>> getPostByPublisherId(@PathVariable(name = "publisherId") long publisherId){
+    public ResponseEntity<List<PostDto>> getPostByPublisherId(@PathVariable(name = "publisherId") long publisherId){
         return ResponseEntity.ok(postService.getPostByPublisherId(publisherId)); // time taken to execute : 19 ms
     }
 

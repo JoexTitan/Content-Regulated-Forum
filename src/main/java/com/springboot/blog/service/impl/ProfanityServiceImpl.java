@@ -2,6 +2,7 @@ package com.springboot.blog.service.impl;
 
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
+import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.ProfanityService;
 import com.springboot.blog.utils.ProfanityManagerUtil;
 import com.springboot.blog.utils.AppEnums.ProfanityStatus;
@@ -9,8 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -21,7 +22,7 @@ public class ProfanityServiceImpl implements ProfanityService {
     // English profanity dictionary from wikipedia
     // https://en.wikipedia.org/wiki/Category:English_profanity
 
-    // dynamic threshold of 2 - 4% for all text per blog post
+    // static threshold of (2% - 4%) for blog text per post
     private static final double NEGATIVE_PROFANITY_THRESHOLD = 0.02;
     private static final double NEUTRAL_PROFANITY_THRESHOLD  = 0.03;
     private static final double POSITIVE_PROFANITY_THRESHOLD = 0.04;
