@@ -14,13 +14,13 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 /**
- * The ReputationCalculator class calculates the overall reputation score for a user,
+ * The ReputationService class calculates the overall reputation score for a user,
  * considering various metrics such as engagement, posting frequency, profanity usage,
  * sentiment of posts, and the number of followers.
  *
- * Reputation plays a crucial role for the:
- *   i) Recommendation algorithm in the user feed
- *   ii) Blog profanity threshold allocation
+ * Reputation plays a crucial role for the way we:
+ *   i) recommend blogs to the user via user feed
+ *   ii) and calculate blog profanity threshold
  */
 
 @Service
