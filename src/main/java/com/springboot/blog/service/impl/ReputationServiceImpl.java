@@ -46,12 +46,13 @@ public class ReputationServiceImpl implements ReputationService {
         // If the user has no posts, assign the lowest score possible
         if (posts == null || posts.isEmpty()) {
             return 0.0;
-        } // calculate individual scores for each metric that builds reputation
-        double postEngagementScore = averagePostEngagement(posts);
-        double postFrequencyScore = averagePublishFrequency(posts);
-        double postProfanityScore = averagePostProfanityScore(posts);
-        double postSentimentScore = averagePostSentiment(posts);
-        double followerScore = (double) userRepository.findFollowersByUserId(publisherID).size() / 10;
+        } // below are individual scores for each metric that build publisher reputation
+        // total achievable reputation score is 40 points since profanity is a deductible
+        double postEngagementScore = Math.min(averagePostEngagement(posts), 25); // likes | shares | comments
+        double postFrequencyScore = Math.min(averagePublishFrequency(posts), 2.5); // blog post frequency ratio
+        double postProfanityScore = Math.min(averagePostProfanityScore(posts), 7.5); // profanity marker score
+        double postSentimentScore = Math.min(averagePostSentiment(posts), 2.5); // sentiment marker for publisher
+        double followerScore = Math.min((double) userRepository.findFollowersByUserId(publisherID).size() / 100, 2.5);
         System.out.println("\n\npostEngagementScore: " + postEngagementScore + "\npostFrequencyScore: " + postFrequencyScore +
         "\npostProfanityScore: " + postProfanityScore + "\npostSentimentScore: " + postSentimentScore + "\nfollowerScore: " + followerScore);
         // Combine the individual scores to obtain the overall reputation rank
@@ -59,7 +60,7 @@ public class ReputationServiceImpl implements ReputationService {
     }
 
     public static double averagePublishFrequency(List<Post> posts) {
-        double normalizationFactor = 380;
+        double normalizationFactor = 120;
         double totalFrequencyScore = 0.0;
         for (int i = 1; i < posts.size(); i++) {
             Date previousPostTime = posts.get(i - 1).getPublishDate();
@@ -88,21 +89,18 @@ public class ReputationServiceImpl implements ReputationService {
         List<Double> likesScores = new ArrayList<>();
         List<Double> commentsScores = new ArrayList<>();
         List<Double> sharesScores = new ArrayList<>();
-        List<Double> reportsScores = new ArrayList<>();
 
         for (Post post : posts) {
             likesScores.add((double) post.getLikesCount());
             commentsScores.add((double) post.getCommentCount());
             sharesScores.add((double) post.getShareCount());
-            reportsScores.add((double) post.getNumOfReports());
         }
         // Calculate weighted median scores for each metric
-        double weightedMedianLikes = calculateWeightedMedian(likesScores, 0.4);
-        double weightedMedianShares = calculateWeightedMedian(sharesScores, 0.3);
-        double weightedMedianComments = calculateWeightedMedian(commentsScores, 0.1);
-        double weightedMedianReports = calculateWeightedMedian(reportsScores, 0.2);
+        double weightedMedianLikes = calculateWeightedMedian(likesScores, 0.45);
+        double weightedMedianShares = calculateWeightedMedian(sharesScores, 0.45);
+        double weightedMedianComments = calculateWeightedMedian(commentsScores, 0.10);
         // Calculate overall reputation based on weighted median scores
-        return ((weightedMedianLikes + weightedMedianShares + weightedMedianComments - weightedMedianReports) / 4) * normalizationFactor;
+        return ((weightedMedianLikes + weightedMedianShares + weightedMedianComments) / 3) * normalizationFactor;
     }
 
     private static double calculateWeightedMedian(List<Double> list, double weight) {
@@ -112,7 +110,7 @@ public class ReputationServiceImpl implements ReputationService {
         double totalWeight = 0.0;
 
         for (int i = 0; i < size; i++) {
-            // Adjust weight for even-sized lists
+            // Adjusting weight for even-sized lists
             double medianWeight = (size % 2 == 0) ? 0.5 : 1.0;
             double currentWeight = medianWeight * weight;
             weightedSum += list.get(i) * currentWeight;

@@ -28,7 +28,7 @@ public class UserServiceImpl implements UserService {
     private final PostRepository postRepository;
     private final ReputationService reputationService;
     private final NowTrendingService nowTrendingService;
-    private final double DISTINGUISHED_PUBLISHER_THRESHOLD = 19.99;
+    private final double DISTINGUISHED_PUBLISHER_THRESHOLD = 20.00;
     @Override
     public Set<PostDto> getRecommendedPosts(long userId) {
         Set<PostDto> userFeedCollection = new HashSet<>();
@@ -212,28 +212,3 @@ public class UserServiceImpl implements UserService {
         return userDTO;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
