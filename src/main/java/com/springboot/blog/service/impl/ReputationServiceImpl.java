@@ -1,5 +1,6 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.aspect.GetExecutionTime;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.repository.PostRepository;
@@ -31,23 +32,22 @@ public class ReputationServiceImpl implements ReputationService {
     private final UserRepository userRepository;
 
     /**
-     * Calculates the overall reputation score for a user.
-     *
-     * For optimization purposes, the method is annotated with @Cacheable,
-     * caching the result under the "userReputationScore" cache name based on the publisherID.
-     * The cache policy is set to refresh every 24 hours.
+     * For optimization purposes the result is cached.
+     * The cache collection is set to refresh every 24 hours.
+     * Reputation of a user is not swayed quickly and is built over time.
      *
      * @param publisherID The unique identifier of the user.
-     * @return userReputationRating The calculated overall reputation score as a double.
+     * @return reputation rank, the calculated overall reputation score as a double.
      */
-    // @Cacheable(value = "userReputationScore", key = "#publisherID")
+    @Override
+    @GetExecutionTime // avg execution time: 8 ms
+    @Cacheable(value = "userReputationScore", key = "#publisherID")
     public double overallReputationScore(long publisherID) {
         List<Post> posts = postRepository.findAllPostsByPublisher(publisherID);
         // If the user has no posts, assign the lowest score possible
         if (posts == null || posts.isEmpty()) {
             return 0.0;
         } // below are individual scores for each metric that build publisher reputation
-        // max achievable reputation score is 32.5 points since profanity is a deductible
         double postEngagementScore = Math.min(averagePostEngagement(posts), 25); // likes | shares | comments
         double postFrequencyScore = Math.min(averagePublishFrequency(posts), 2.5); // blog post frequency ratio
         double postProfanityScore = Math.min(averagePostProfanityScore(posts), 7.5); // profanity marker score
@@ -59,8 +59,8 @@ public class ReputationServiceImpl implements ReputationService {
         return postEngagementScore + postFrequencyScore + postSentimentScore + followerScore - postProfanityScore;
     }
 
-    public static double averagePublishFrequency(List<Post> posts) {
-        double normalizationFactor = 120;
+    private static double averagePublishFrequency(List<Post> posts) {
+        double normalizationFactor = 120.0;
         double totalFrequencyScore = 0.0;
         for (int i = 1; i < posts.size(); i++) {
             Date previousPostTime = posts.get(i - 1).getPublishDate();
@@ -84,8 +84,8 @@ public class ReputationServiceImpl implements ReputationService {
         return 1.0 / (hoursBetweenPosts + epsilon);
     }
 
-    public static double averagePostEngagement(List<Post> posts) {
-        double normalizationFactor = 18;
+    private static double averagePostEngagement(List<Post> posts) {
+        double normalizationFactor = 18.0;
         List<Double> likesScores = new ArrayList<>();
         List<Double> commentsScores = new ArrayList<>();
         List<Double> sharesScores = new ArrayList<>();
@@ -119,15 +119,15 @@ public class ReputationServiceImpl implements ReputationService {
         return weightedSum / totalWeight;
     }
 
-    public static double averagePostSentiment(List<Post> posts) {
+    private static double averagePostSentiment(List<Post> posts) {
         int totalSentimentScore = 0;
+        double normalizationFactor = 8.0;
 
         for (Post post : posts) {
             int sentimentScore = mapSentimentToScore(post.getPostSentiment());
             totalSentimentScore += sentimentScore;
         }
         double averageSentimentScore = (double) totalSentimentScore / posts.size();
-        double normalizationFactor = 8.0;
         return averageSentimentScore * normalizationFactor;
     }
 
@@ -145,17 +145,15 @@ public class ReputationServiceImpl implements ReputationService {
         }
     }
 
-    public static double averagePostProfanityScore(List<Post> posts) {
+    private static double averagePostProfanityScore(List<Post> posts) {
         double totalProfanityScore = 0.0;
+        double normalizationFactor = 6.0;
 
         for (Post post : posts) {
             double profanityScore = analyzeProfanity(post.getProfanityStatus());
             totalProfanityScore += profanityScore;
         }
-
         double averageProfanityScore = totalProfanityScore / posts.size();
-        double normalizationFactor = 6.0;
-
         return averageProfanityScore * normalizationFactor;
     }
 

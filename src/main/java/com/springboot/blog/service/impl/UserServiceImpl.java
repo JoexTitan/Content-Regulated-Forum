@@ -1,5 +1,6 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.aspect.GetExecutionTime;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
@@ -13,6 +14,7 @@ import com.springboot.blog.service.UserService;
 import com.springboot.blog.utils.AppEnums.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,11 +27,20 @@ public class UserServiceImpl implements UserService {
 
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
     private final ReputationService reputationService;
     private final NowTrendingService nowTrendingService;
     private final double DISTINGUISHED_PUBLISHER_THRESHOLD = 20.00;
+    /**
+     * For optimization purposes userRecommendedPosts are cached.
+     * The cache collection is set to refresh every 3 hours.
+     *
+     * @param userId The unique identifier of the user.
+     * @return A collection (Set<PostDto>) of posts fetched from
+     * trendy publishers, favourite publishers, and preferred genres.
+     */
     @Override
+    @GetExecutionTime
+    @Cacheable(value = "userRecommendedPosts", key = "#userId")
     public Set<PostDto> getRecommendedPosts(long userId) {
         Set<PostDto> userFeedCollection = new HashSet<>();
         // will store Map<publisherID, publisherRank>

@@ -1,5 +1,6 @@
 package com.springboot.blog.service.impl;
 
+import com.springboot.blog.aspect.GetExecutionTime;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.service.PostService;
@@ -22,6 +23,7 @@ public class ProfanityServiceImpl implements ProfanityService {
     private final ReputationServiceImpl reputationService;
 
     @Override
+    @GetExecutionTime
     public List<PostDto> filterPostProfanity(List<PostDto> postDtoList) {
         List<PostDto> filteredList = new ArrayList<>();
 
@@ -36,6 +38,7 @@ public class ProfanityServiceImpl implements ProfanityService {
     }
 
     @Override
+    @GetExecutionTime
     public Post profanityMarker(Post post) {
 
         double publisherRank = reputationService
