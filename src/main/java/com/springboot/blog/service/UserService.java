@@ -5,9 +5,10 @@ import com.springboot.blog.payload.UserDTO;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public interface UserService {
-    Set<PostDto> getRecommendedPosts(long userId);
+    Set<PostDto> getRecommendedPosts(long userId) throws ExecutionException, InterruptedException;
 
     void addFavGenres(long userId, UserDTO userDTO);
 

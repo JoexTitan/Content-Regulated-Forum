@@ -18,6 +18,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @GetExecutionTime
     @Scheduled(fixedRate = 7 * 24 * 60 * 60 * 1000)
-    public void sendRecommendedPostNotifications() {
+    public void sendRecommendedPostNotifications() throws ExecutionException, InterruptedException {
         Set<UserEntity> userList = userRepository.findAllUsers();
         for (UserEntity user : userList) {
             Set<PostDto> recommendedPosts = userService.getRecommendedPosts(user.getId());

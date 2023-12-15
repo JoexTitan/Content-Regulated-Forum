@@ -14,7 +14,7 @@ public class CacheConfig {
     @Bean
     public CacheManager cacheManager() {
         ConcurrentMapCacheManager cacheManager =
-                new ConcurrentMapCacheManager("posts", "comment", "userReputationScore", "userRecommendedPosts");
+                new ConcurrentMapCacheManager("posts", "comment", "userRecommendedPosts");
         cacheManager.setAllowNullValues(false); // disallow null values in the cache
         cacheManager.setStoreByValue(true); // allowed to store elements by value
         return cacheManager;

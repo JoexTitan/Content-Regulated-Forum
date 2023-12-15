@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,7 +51,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @GetExecutionTime
     @Cacheable(value = "userRecommendedPosts", key = "#userId")
-    public Set<PostDto> getRecommendedPosts(long userId) {
+    public Set<PostDto> getRecommendedPosts(long userId) throws ExecutionException, InterruptedException {
         Set<PostDto> userFeedCollection = new HashSet<>();
         // will store Map<publisherID, publisherRank>
         Map<Long, Double> publisherReputationMap = new HashMap<>();
@@ -84,7 +85,7 @@ public class UserServiceImpl implements UserService {
                 }
             } else {
                 // if the publisher has not been added to publisherReputationMap we will add him there
-                double publisherRank = reputationService.overallReputationScore(post.getPublisherID());
+                double publisherRank = reputationService.overallReputationScore(post.getPublisherID()).get();
                 publisherReputationMap.put(post.getPublisherID(), publisherRank);
                 System.out.println("\nPublisherID# " + post.getPublisherID() + " | RANK: " + publisherRank);
                 // if publisher is of high rank we will be updating postsFromDistinguishedPublishers collection

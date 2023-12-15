@@ -30,6 +30,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Service
@@ -54,7 +55,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public PostDto createPost(PostDto postDto) {
+    public PostDto createPost(PostDto postDto) throws ExecutionException, InterruptedException {
         String postSentiment = sentimentAnalysisService.analyzeSentiment(postDto.getContent());
 
         // convert DTO to entity
@@ -83,7 +84,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) {
+    public PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) throws ExecutionException, InterruptedException {
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
@@ -127,7 +128,7 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @CachePut(cacheNames = "posts", key = "#id")
-    public PostDto updatePost(PostDto postDto, long id) {
+    public PostDto updatePost(PostDto postDto, long id) throws ExecutionException, InterruptedException {
         Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id));
 

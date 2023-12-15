@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class ProfanityServiceImpl implements ProfanityService {
 
     @Override
     @GetExecutionTime
-    public List<PostDto> filterPostProfanity(List<PostDto> postDtoList) {
+    public List<PostDto> filterPostProfanity(List<PostDto> postDtoList) throws ExecutionException, InterruptedException {
         List<PostDto> filteredList = new ArrayList<>();
 
         for (PostDto postDto : postDtoList) {
@@ -39,10 +40,10 @@ public class ProfanityServiceImpl implements ProfanityService {
 
     @Override
     @GetExecutionTime
-    public Post profanityMarker(Post post) {
+    public Post profanityMarker(Post post) throws ExecutionException, InterruptedException {
 
         double publisherRank = reputationService
-                .overallReputationScore(post.getPublisherID().getId());
+                .overallReputationScore(post.getPublisherID().getId()).get();
         // regardless of how good someone's reputation is we will cap bonus allowance at 2%
         double adjustForPublisherRank = Math.min(publisherRank * 0.005, 0.02);
 

@@ -2,17 +2,16 @@ package com.springboot.blog.service.impl;
 
 import com.springboot.blog.aspect.GetExecutionTime;
 import com.springboot.blog.entity.Post;
-import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
-import com.springboot.blog.service.PostService;
 import com.springboot.blog.service.ReputationService;
-import com.springboot.blog.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * The ReputationService class calculates the overall reputation score for a user,
@@ -32,31 +31,38 @@ public class ReputationServiceImpl implements ReputationService {
     private final UserRepository userRepository;
 
     /**
-     * For optimization purposes the result is cached.
-     * The cache collection is set to refresh every 24 hours.
      * Reputation of a user is not swayed quickly and is built over time.
      *
      * @param publisherID The unique identifier of the user.
      * @return reputation rank, the calculated overall reputation score as a double.
      */
     @Override
-    @GetExecutionTime // avg execution time: 8 ms
-    @Cacheable(value = "userReputationScore", key = "#publisherID")
-    public double overallReputationScore(long publisherID) {
+    @GetExecutionTime
+    @Async("asyncTaskExecutor") // avg execution time 6 ms
+    public CompletableFuture<Double> overallReputationScore(long publisherID) {
         List<Post> posts = postRepository.findAllPostsByPublisher(publisherID);
         // If the user has no posts, assign the lowest score possible
         if (posts == null || posts.isEmpty()) {
-            return 0.0;
-        } // below are individual scores for each metric that build publisher reputation
-        double postEngagementScore = Math.min(averagePostEngagement(posts), 25); // likes | shares | comments
-        double postFrequencyScore = Math.min(averagePublishFrequency(posts), 2.5); // blog post frequency ratio
-        double postProfanityScore = Math.min(averagePostProfanityScore(posts), 7.5); // profanity marker score
-        double postSentimentScore = Math.min(averagePostSentiment(posts), 2.5); // sentiment marker for publisher
-        double followerScore = Math.min((double) userRepository.findFollowersByUserId(publisherID).size() / 100, 2.5);
-        System.out.println("\n\npostEngagementScore: " + postEngagementScore + "\npostFrequencyScore: " + postFrequencyScore +
-        "\npostProfanityScore: " + postProfanityScore + "\npostSentimentScore: " + postSentimentScore + "\nfollowerScore: " + followerScore);
-        // Combine the individual scores to obtain the overall reputation rank
-        return postEngagementScore + postFrequencyScore + postSentimentScore + followerScore - postProfanityScore;
+            return CompletableFuture.completedFuture(0.0); // assigned min score
+        }
+        CompletableFuture<Double> postEngagementScoreFuture = CompletableFuture.supplyAsync(() ->
+                Math.min(averagePostEngagement(posts), 25));
+        CompletableFuture<Double> postFrequencyScoreFuture = CompletableFuture.supplyAsync(() ->
+                Math.min(averagePublishFrequency(posts), 2.5));
+        CompletableFuture<Double> postSentimentScoreFuture = CompletableFuture.supplyAsync(() ->
+                Math.min(averagePostSentiment(posts), 2.5));
+        CompletableFuture<Double> postProfanityScoreFuture = CompletableFuture.supplyAsync(() ->
+                Math.min(averagePostProfanityScore(posts), 7.5));
+        CompletableFuture<Double> followerScoreFuture = CompletableFuture.supplyAsync(() -> {
+            long followersCount = userRepository.findFollowersByUserId(publisherID).size();
+            return Math.min((double) followersCount / 100, 2.5);
+        });
+        // Combine the individual scores when all CompletableFuture are completed
+        return CompletableFuture.allOf(postEngagementScoreFuture, postFrequencyScoreFuture,
+                postProfanityScoreFuture, postSentimentScoreFuture, followerScoreFuture
+        ).thenApply(ignored -> postEngagementScoreFuture.join() + postFrequencyScoreFuture.join() +
+                postSentimentScoreFuture.join() + followerScoreFuture.join() - postProfanityScoreFuture.join()
+        );
     }
 
     private static double averagePublishFrequency(List<Post> posts) {

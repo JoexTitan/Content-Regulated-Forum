@@ -4,15 +4,16 @@ import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 public interface PostService {
-    PostDto createPost(PostDto postDto);
+    PostDto createPost(PostDto postDto) throws ExecutionException, InterruptedException;
 
-    PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir);
+    PostResponse getAllPosts(int pageNo, int pageSize, String sortBy, String sortDir) throws ExecutionException, InterruptedException;
 
     PostDto getPostById(long id);
 
-    PostDto updatePost(PostDto postDto, long id);
+    PostDto updatePost(PostDto postDto, long id) throws ExecutionException, InterruptedException;
 
     void reportPost(Long postId, String username);
 

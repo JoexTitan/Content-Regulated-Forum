@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class UserController {
             LoggerFactory.getLogger(UserController.class);
 
     @GetMapping("/{userId}/feed")
-    public ResponseEntity<Set<PostDto>> getRecommendedPosts(@PathVariable Long userId, HttpServletRequest request) {
+    public ResponseEntity<Set<PostDto>> getRecommendedPosts(@PathVariable Long userId, HttpServletRequest request) throws ExecutionException, InterruptedException {
         LOGGER.info("UserController.getRecommendedPosts currentUserId: {}", userId);
         String token = jwtTokenProvider.getTokenFromHeader(request);
         if (token == null || !jwtTokenProvider.validateToken(token)) {

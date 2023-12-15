@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -125,7 +126,7 @@ public class PostController {
 
     @PostMapping
     @GetExecutionTime
-    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto, HttpServletRequest request){
+    public ResponseEntity<PostDto> createPost(@Valid @RequestBody PostDto postDto, HttpServletRequest request) throws ExecutionException, InterruptedException {
         if (!contentTypeValidator(request)) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST, "please provide json body with the request");
         }
@@ -135,7 +136,7 @@ public class PostController {
     @GetExecutionTime
     @PutMapping("/{id}")
     public ResponseEntity<PostDto> updatePost(@Valid @RequestBody PostDto postDto,
-                                              @PathVariable(name = "id") long id, HttpServletRequest request) {
+                                              @PathVariable(name = "id") long id, HttpServletRequest request) throws ExecutionException, InterruptedException {
         LOGGER.info("PostController.updatePost postId: {}", id);
         if (!contentTypeValidator(request)) { // validate delivered content/payload
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
@@ -194,7 +195,7 @@ public class PostController {
             @RequestParam(value = "pageNo", defaultValue = AppConstants.DEFAULT_PAGE_NUMBER, required = false) int pageNo,
             @RequestParam(value = "pageSize", defaultValue = AppConstants.DEFAULT_PAGE_SIZE, required = false) int pageSize,
             @RequestParam(value = "sortBy", defaultValue = AppConstants.DEFAULT_SORT_BY, required = false) String sortBy,
-            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDir){
+            @RequestParam(value = "sortDir", defaultValue = AppConstants.DEFAULT_SORT_DIRECTION, required = false) String sortDir) throws ExecutionException, InterruptedException {
         return postService.getAllPosts(pageNo, pageSize, sortBy, sortDir);
     }
 

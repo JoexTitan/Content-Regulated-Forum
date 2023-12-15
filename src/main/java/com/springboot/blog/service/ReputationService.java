@@ -1,5 +1,7 @@
 package com.springboot.blog.service;
 
+import java.util.concurrent.CompletableFuture;
+
 public interface ReputationService {
-    public double overallReputationScore(long publisherID);
+    public CompletableFuture<Double> overallReputationScore(long publisherID);
 }
