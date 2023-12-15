@@ -27,31 +27,33 @@ public class NotificationServiceImpl implements NotificationService {
     private final RestTemplate restTemplate;
     private final JavaMailSender javaMailSender;
     private final UserRepository userRepository;
+
     /**
      * Sends weekly personalized post recommendations via email to users at a fixed rate.
      * The execution of this method is automatically handled by @EnableScheduling at root of the application level.
      */
+
     @Override
     @GetExecutionTime
     @Scheduled(fixedRate = 7 * 24 * 60 * 60 * 1000)
     public void sendRecommendedPostNotifications() {
         Set<UserEntity> userList = userRepository.findAllUsers();
-
         for (UserEntity user : userList) {
             Set<PostDto> recommendedPosts = userService.getRecommendedPosts(user.getId());
-
             if (!recommendedPosts.isEmpty()) {
                 String message = generateHtmlEmailContent(recommendedPosts);
                 sendEmail(user.getEmail(), user.getName() + ", Your Customized Weekly Roundup is Here!", message);
             }
         }
     }
+
     /**
      * Generates HTML content for the recommended post email.
      *
      * @param recommendedPosts Set of recommended posts for a user.
      * @return HTML content for the email.
      */
+
     private String generateHtmlEmailContent(Set<PostDto> recommendedPosts) {
         // Amazing and fancy HTML template for the email with dynamically generated images
         String htmlTemplate = "<html>" +

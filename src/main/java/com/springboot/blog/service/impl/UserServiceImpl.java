@@ -1,24 +1,28 @@
 package com.springboot.blog.service.impl;
 
 import com.springboot.blog.aspect.GetExecutionTime;
-import com.springboot.blog.entity.Post;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;
 import com.springboot.blog.payload.*;
-import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.NowTrendingService;
 import com.springboot.blog.service.ReputationService;
 import com.springboot.blog.service.UserService;
 import com.springboot.blog.utils.AppEnums.ErrorCode;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +33,12 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ReputationService reputationService;
     private final NowTrendingService nowTrendingService;
-    private final double DISTINGUISHED_PUBLISHER_THRESHOLD = 20.00;
+
+    @Value("${distinguished_publisher_threshold}")
+    private double DISTINGUISHED_PUBLISHER_THRESHOLD;
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(UserService.class);
     /**
      * For optimization purposes userRecommendedPosts are cached.
      * The cache collection is set to refresh every 3 hours.
@@ -93,8 +102,62 @@ public class UserServiceImpl implements UserService {
                 }
             }
         }
-        // return union distinct for collected posts
+        // return distinct union for collected posts
         return userFeedCollection;
+    }
+
+    @Override
+    @Transactional
+    @GetExecutionTime
+    @Async("asyncTaskExecutor")
+    public void follow(Long currentUserID, Long targetUserID) {
+        // Asynchronously fetch both users within the same transaction
+        CompletableFuture<UserEntity> currUserFuture = fetchUserAsync(currentUserID);
+        CompletableFuture<UserEntity> targetUserFuture = fetchUserAsync(targetUserID);
+
+        CompletableFuture<Void> result = currUserFuture.thenCombine(targetUserFuture, (currUserObj, targetUserObj) -> {
+            // Modify entities and save to the database
+            currUserObj.getFollowing().add(targetUserObj);
+            targetUserObj.getFollowers().add(currUserObj);
+
+            userRepository.save(currUserObj);
+            userRepository.save(targetUserObj);
+
+            return null;
+        });
+        // wait for the completion of the CompletableFuture
+        result.join();
+    }
+
+    @Override
+    @Transactional
+    @GetExecutionTime
+    @Async("asyncTaskExecutor")
+    public void unfollow(Long currentUserID, Long targetUserID) {
+        // Asynchronously fetch both users within the same transaction
+        CompletableFuture<UserEntity> currUserFuture = fetchUserAsync(currentUserID);
+        CompletableFuture<UserEntity> targetUserFuture = fetchUserAsync(targetUserID);
+
+        CompletableFuture<Void> result = currUserFuture.thenCombine(targetUserFuture, (currUserObj, targetUserObj) -> {
+            // Modify entities and save to the database
+            currUserObj.getFollowing().remove(targetUserObj);
+            targetUserObj.getFollowers().remove(currUserObj);
+
+            userRepository.save(currUserObj);
+            userRepository.save(targetUserObj);
+
+            return null;
+        });
+        // wait for the completion of the CompletableFuture
+        result.join();
+    }
+
+    @Transactional
+    @Async("asyncTaskExecutor")
+    public CompletableFuture<UserEntity> fetchUserAsync(Long userID) {
+        UserEntity user = userRepository.findById(userID)
+                .orElseThrow(() -> new ResourceNotFoundException("UserID", "ID", userID));
+        return CompletableFuture.completedFuture(user);
     }
 
     @Override
@@ -113,30 +176,6 @@ public class UserServiceImpl implements UserService {
                         "Was not able to find user with ID: " + userId, ErrorCode.USER_NOT_FOUND));
         foundUser.setFavBlogGenres(new HashSet<>());
         userRepository.save(foundUser);
-    }
-
-    @Override
-    public void follow(Long currentUserID, Long targetUserID) {
-        UserEntity currUserObj =  userRepository.findById(currentUserID).orElseThrow(
-                () -> new ResourceNotFoundException("currentUserID", "ID", currentUserID));
-        UserEntity targetUserObj =  userRepository.findById(targetUserID).orElseThrow(
-                () -> new ResourceNotFoundException("targetUserID", "ID", targetUserID));
-        currUserObj.getFollowing().add(targetUserObj);
-        targetUserObj.getFollowers().add(currUserObj);
-        userRepository.save(currUserObj);
-        userRepository.save(targetUserObj);
-    }
-
-    @Override
-    public void unfollow(Long currentUserID, Long targetUserID) {
-        UserEntity currUserObj =  userRepository.findById(currentUserID).orElseThrow(
-                () -> new ResourceNotFoundException("currentUserID", "ID", currentUserID));
-        UserEntity targetUserObj =  userRepository.findById(targetUserID).orElseThrow(
-                () -> new ResourceNotFoundException("targetUserID", "ID", targetUserID));
-        currUserObj.getFollowing().remove(targetUserObj);
-        targetUserObj.getFollowers().remove(currUserObj);
-        userRepository.save(currUserObj);
-        userRepository.save(targetUserObj);
     }
 
     @Override

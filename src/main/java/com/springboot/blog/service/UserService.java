@@ -1,11 +1,10 @@
 package com.springboot.blog.service;
 
-import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.UserDTO;
 
-import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public interface UserService {
     Set<PostDto> getRecommendedPosts(long userId);

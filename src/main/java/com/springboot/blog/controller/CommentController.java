@@ -30,11 +30,12 @@ public class CommentController {
     private final UserService userService;
     private final CommentService commentService;
     private final JwtTokenProvider jwtTokenProvider;
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommentController.class);
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CommentController.class);
 
     @GetExecutionTime
     @PostMapping("/posts/{postId}/comments")
-    // @Api(tags = "Comment Controller", description = "Operations related to comments") # add swagger docs #################
     public ResponseEntity<CommentDto> createComment(@PathVariable(value = "postId") long postId,
                                                     @Valid @RequestBody CommentDto commentDto, HttpServletRequest request) {
         LOGGER.info("CommentController.createComment id: {}", postId);

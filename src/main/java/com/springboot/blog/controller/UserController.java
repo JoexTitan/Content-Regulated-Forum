@@ -28,7 +28,9 @@ public class UserController {
     private final UserService userService;
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(UserController.class);
 
     @GetMapping("/{userId}/feed")
     public ResponseEntity<Set<PostDto>> getRecommendedPosts(@PathVariable Long userId, HttpServletRequest request) {
