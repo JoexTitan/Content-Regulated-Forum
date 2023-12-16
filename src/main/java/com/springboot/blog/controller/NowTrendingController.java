@@ -1,15 +1,13 @@
 package com.springboot.blog.controller;
 
-import com.springboot.blog.aspect.GetExecutionTime;
+import com.springboot.blog.annotations.GetExecutionTime;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.jwt.JwtTokenProvider;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.service.NowTrendingService;
-import com.springboot.blog.service.impl.NowTrendingServiceImpl;
 import com.springboot.blog.utils.AppEnums.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;

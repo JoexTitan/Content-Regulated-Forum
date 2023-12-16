@@ -19,7 +19,7 @@ public class GeneralAspectInterceptor {
 
     Logger logger= LoggerFactory.getLogger(GeneralAspectInterceptor.class);
 
-    @Around("@annotation(com.springboot.blog.aspect.GetExecutionTime)")
+    @Around("@annotation(com.springboot.blog.annotations.GetExecutionTime)")
     public Object trackTime(ProceedingJoinPoint currOperation) throws Throwable {
         long stratTime = System.currentTimeMillis();
         Object obj = currOperation.proceed();

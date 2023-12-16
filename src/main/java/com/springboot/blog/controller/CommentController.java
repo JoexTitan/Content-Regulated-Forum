@@ -1,5 +1,5 @@
 package com.springboot.blog.controller;
-import com.springboot.blog.aspect.GetExecutionTime;
+import com.springboot.blog.annotations.GetExecutionTime;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.jwt.JwtTokenProvider;
 import com.springboot.blog.payload.CommentDto;

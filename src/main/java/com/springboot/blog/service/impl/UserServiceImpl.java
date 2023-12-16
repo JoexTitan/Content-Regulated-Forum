@@ -1,6 +1,6 @@
 package com.springboot.blog.service.impl;
 
-import com.springboot.blog.aspect.GetExecutionTime;
+import com.springboot.blog.annotations.GetExecutionTime;
 import com.springboot.blog.entity.UserEntity;
 import com.springboot.blog.exception.BlogAPIException;
 import com.springboot.blog.exception.ResourceNotFoundException;

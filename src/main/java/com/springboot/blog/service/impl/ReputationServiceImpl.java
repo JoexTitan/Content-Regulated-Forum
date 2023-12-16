@@ -1,12 +1,11 @@
 package com.springboot.blog.service.impl;
 
-import com.springboot.blog.aspect.GetExecutionTime;
+import com.springboot.blog.annotations.GetExecutionTime;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.repository.PostRepository;
 import com.springboot.blog.repository.UserRepository;
 import com.springboot.blog.service.ReputationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
