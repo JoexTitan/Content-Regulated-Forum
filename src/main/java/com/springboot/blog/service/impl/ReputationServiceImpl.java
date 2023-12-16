@@ -29,7 +29,6 @@ public class ReputationServiceImpl implements ReputationService {
 
     private final PostRepository postRepository;
     private final UserRepository userRepository;
-
     /**
      * Reputation of a user is not swayed quickly and is built over time.
      *
@@ -38,7 +37,7 @@ public class ReputationServiceImpl implements ReputationService {
      */
     @Override
     @GetExecutionTime
-    @Async("asyncTaskExecutor") // avg execution time 6 ms
+    @Async("asyncTaskExecutor") // avg execution time 8 ms
     public CompletableFuture<Double> overallReputationScore(long publisherID) {
         List<Post> posts = postRepository.findAllPostsByPublisher(publisherID);
         // If the user has no posts, assign the lowest score possible

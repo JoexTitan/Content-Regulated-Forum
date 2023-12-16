@@ -53,7 +53,7 @@ public class RedisConfig {
                 .serializeValuesWith(SerializationPair.fromSerializer(jsonSerializer));
 
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        // Set custom TTL for posts, disallow caching null values, and add custom prefix
+        // set custom TTL for each collection and disallow caching null values
         cacheConfigurations.put("posts", RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(postsCacheTtlHrs))
                 .disableCachingNullValues()
@@ -67,9 +67,7 @@ public class RedisConfig {
                 .disableCachingNullValues()
         );
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultCacheConfig)
-                .withInitialCacheConfigurations(cacheConfigurations)
-                .build();
+        return RedisCacheManager.builder(connectionFactory).cacheDefaults(defaultCacheConfig)
+                .withInitialCacheConfigurations(cacheConfigurations).build();
     }
 }

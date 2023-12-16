@@ -45,8 +45,8 @@ public class UserServiceImpl implements UserService {
      * The cache collection is set to refresh every 3 hours.
      *
      * @param userId The unique identifier of the user.
-     * @return A collection (Set<PostDto>) of posts fetched from
-     * trendy publishers, favourite publishers, and preferred genres.
+     * @return A collection Set<PostDto> fetched from
+     * trending publishers, favourite authors, and preferred genres.
      */
     @Override
     @GetExecutionTime
@@ -87,7 +87,7 @@ public class UserServiceImpl implements UserService {
                 // if the publisher has not been added to publisherReputationMap we will add him there
                 double publisherRank = reputationService.overallReputationScore(post.getPublisherID()).get();
                 publisherReputationMap.put(post.getPublisherID(), publisherRank);
-                System.out.println("\nPublisherID# " + post.getPublisherID() + " | RANK: " + publisherRank);
+                System.out.println("PublisherID# " + post.getPublisherID() + " | RANK: " + publisherRank);
                 // if publisher is of high rank we will be updating postsFromDistinguishedPublishers collection
                 if (publisherRank >= DISTINGUISHED_PUBLISHER_THRESHOLD) {;
                     userFeedCollection.add(post);
@@ -103,7 +103,6 @@ public class UserServiceImpl implements UserService {
                 }
             }
         }
-        // return distinct union for collected posts
         return userFeedCollection;
     }
 
