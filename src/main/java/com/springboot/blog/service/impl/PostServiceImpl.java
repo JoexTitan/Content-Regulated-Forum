@@ -57,28 +57,23 @@ public class PostServiceImpl implements PostService {
     @Transactional
     public PostDto createPost(PostDto postDto) throws ExecutionException, InterruptedException {
         String postSentiment = sentimentAnalysisService.analyzeSentiment(postDto.getContent());
-
-        // convert DTO to entity
         Post post = mapToEntity(postDto);
         post.setPublishDate(new Date());
         post.setNumOfReports((long) 0);
         post.setPostSentiment(postSentiment);
-
-        // Get the current user
         UserEntity currentUser = getCurrentUser();
-        // Set the user in the post
         post.setPublisherID(currentUser);
-        // entityManager.detach(currentUser);  // Detach the user entity
+        // Detach the user entity
+        // entityManager.detach(currentUser);
 
         // Add the post to the user's set of posts
         currentUser.getPosts().add(post);
         // Perform profanity check
         post = profanityService.profanityMarker(post);
-        // post = entityManager.merge(post);   // Merge the post to reattach it
+        // Merge the post to reattach it
+        // post = entityManager.merge(post);
 
-        // Save the post
         Post newPost = postRepository.save(post);
-        // convert entity to DTO
         PostDto postResponse = mapToDTO(newPost);
         return postResponse;
     }
@@ -88,17 +83,12 @@ public class PostServiceImpl implements PostService {
 
         Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
-
         // create Pageable instance
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
-
         Page<Post> posts = postRepository.findAll(pageable);
-
         // get content for page/pagination object
         List<Post> listOfPosts = posts.getContent();
-
         List<PostDto> listOfPostDto = listOfPosts.stream().map(post -> mapToDTO(post)).collect(Collectors.toList());
-
         List<PostDto> profanityFreePosts = profanityService.filterPostProfanity(listOfPostDto);
 
         PostResponse postResponse = new PostResponse();
@@ -117,13 +107,11 @@ public class PostServiceImpl implements PostService {
     public PostDto getPostById(long id) {
         Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id));
-
-        if (Objects.equals(post.getProfanityStatus(), ProfanityStatus.ACTIVE)) {
-            return mapToDTO(post);
-        } else {
+        if (!Objects.equals(post.getProfanityStatus(), ProfanityStatus.ACTIVE)) {
             throw new BlogAPIException(HttpStatus.BAD_REQUEST,
                     "The post has been blocked due to its inappropriate content.", ErrorCode.POST_BLOCKED);
         }
+        return mapToDTO(post);
     }
 
     @Override
@@ -131,24 +119,22 @@ public class PostServiceImpl implements PostService {
     public PostDto updatePost(PostDto postDto, long id) throws ExecutionException, InterruptedException {
         Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id));
-
         post.setTitle(postDto.getTitle());
         post.setDescription(postDto.getDescription());
         post.setContent(postDto.getContent());
-
         Post updatedPost = postRepository.save(profanityService.profanityMarker(post));
         return mapToDTO(updatedPost);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "posts", key = "#postId")
     public void deletePostById(long postId, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new BlogAPIException(HttpStatus.BAD_REQUEST,
                         "the user was not found with username: " + username, ErrorCode.USER_NOT_FOUND));
-
         // Update bidirectional relationship
         user.getPosts().remove(post);
         user.getLikedPosts().remove(post);
@@ -158,11 +144,12 @@ public class PostServiceImpl implements PostService {
         userRepository.save(user);
         // Delete the post & persist to the database
         postRepository.delete(post);
-        evictPostCache(postId);
+        // evictPostCache(postId);
     }
 
     @Override
-    @CacheEvict(cacheNames = "posts", allEntries = true)
+    @Transactional
+    @CacheEvict(value = "posts", key = "#postId")
     public void incrementLikes(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
@@ -173,10 +160,12 @@ public class PostServiceImpl implements PostService {
         post.setLikesCount(post.getLikesCount() + 1);
         userRepository.save(currUser);
         postRepository.save(post);
-        evictPostCache(postId);
+        // evictPostCache(postId);
     }
 
     @Override
+    @Transactional
+    @CacheEvict(value = "posts", key = "#postId")
     public void incrementShares(Long postId, String username) {
         Post post = postRepository.findById(postId).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", postId));
@@ -187,11 +176,12 @@ public class PostServiceImpl implements PostService {
         post.setShareCount(post.getShareCount() + 1);
         userRepository.save(currUser);
         postRepository.save(post);
-        evictPostCache(postId);
+        // evictPostCache(postId);
     }
 
     @Override
-    // might need concurrent lookup for efficiency
+    @Transactional
+    @CacheEvict(value = "posts", key = "#postId")
     public void reportPost(Long postId, String username) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new ResourceNotFoundException("Post", "id", postId));
@@ -202,7 +192,7 @@ public class PostServiceImpl implements PostService {
         post.setNumOfReports(post.getNumOfReports() + 1); // increment # of reports for post
         userRepository.save(currUser);
         postRepository.save(post);
-        evictPostCache(postId);
+        // evictPostCache(postId);
     }
 
     @Override
