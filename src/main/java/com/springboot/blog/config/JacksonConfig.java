@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class JacksonConfiguration {
+public class JacksonConfig {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizeJackson() {
         return builder -> builder.featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
