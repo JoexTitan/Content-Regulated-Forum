@@ -5,6 +5,7 @@ import com.springboot.blog.payload.ErrorResponse;
 import com.springboot.blog.payload.SubError;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -64,7 +66,6 @@ public class GlobalExceptionHandler {
                 .body(errorDetails);
     }
 
-    // handle specific exceptions
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorDetails> handleResourceNotFoundException(ResourceNotFoundException exception,
                                                                         WebRequest webRequest){
@@ -81,11 +82,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
     }
 
+//    @ExceptionHandler(SQLIntegrityConstraintViolationException.class)
+//    public ResponseEntity<String> handleSQLIntegrityConstraintViolationException(SQLIntegrityConstraintViolationException e) {
+//        return new ResponseEntity<>("Integrity constraint violation: " + e.getMessage(), HttpStatus.CONFLICT);
+//    }
+//
 
+//    @ExceptionHandler(DataIntegrityViolationException.class)
+//    public ResponseEntity<String> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+//        return new ResponseEntity<>("Data integrity violation: " + e.getMessage(), HttpStatus.CONFLICT);
+//    }
+//
 
 //    @ExceptionHandler(Exception.class)
-//    public ResponseEntity<ErrorDetails> handleGlobalException(Exception exception,
-//                                                               WebRequest webRequest){
+//    public ResponseEntity<ErrorDetails> handleGlobalException(Exception exception, WebRequest webRequest){
 //        ErrorDetails errorDetails = new ErrorDetails(new Date(), exception.getMessage(),
 //                webRequest.getDescription(false));
 //        return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
