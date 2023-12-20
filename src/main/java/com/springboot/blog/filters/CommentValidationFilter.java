@@ -106,7 +106,7 @@ public class CommentValidationFilter implements Filter {
     }
 
     private boolean isNameValid(String name) {
-        return StringUtils.hasText(name) && name.length() >= 4 && name.matches("^[A-Za-z]+$");
+        return StringUtils.hasText(name) && name.length() >= 4 && name.matches("^[\\p{L}'.,?!\\s]+$");
     }
 
     private boolean isEmailValid(String email) {
@@ -114,7 +114,7 @@ public class CommentValidationFilter implements Filter {
     }
 
     private boolean isBodyValid(String comment) {
-        return StringUtils.hasText(comment) && Pattern.compile("[a-zA-Z0-9]+").matcher(comment).matches();
+        return StringUtils.hasText(comment) && comment.matches("^[\\p{L}'.,?!\\s]+$");
     }
 
 }

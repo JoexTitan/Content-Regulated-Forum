@@ -5,7 +5,6 @@ import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -26,8 +25,6 @@ public class Post implements Serializable {
 
     @Column(name = "title", nullable = false)
     @NotBlank(message = "Title cannot be blank")
-    @Size(max = 20, message = "Title must be at most 20 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Title must contain only letters, numbers, and spaces")
     private String title;
 
     @Column(name = "description", nullable = false)

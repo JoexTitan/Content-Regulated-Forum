@@ -1,5 +1,6 @@
 package com.springboot.blog.payload;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.springboot.blog.entity.UserEntity;
 import jakarta.persistence.Column;
 import lombok.Data;
@@ -23,6 +24,8 @@ public class PostDto implements Serializable {
     private String description;
     private String content;
     private List<String> tags;
+    @JsonFormat(shape = JsonFormat.Shape.STRING,
+            pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Date publishDate;
     private Set<CommentDto> comments;
     private long likesCount;
