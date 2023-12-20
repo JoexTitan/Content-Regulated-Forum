@@ -7,11 +7,11 @@ A powerful Spring Boot based platform that allows users to create, share, and ex
 
 ## Create Forum Post Diagram:
 <img src="imgs/POST_BlogPost_X6.JPG">
-<hr>
+<br>
 
 ## Sample Post After Sanitization:
 <img src="imgs/SamplePost.JPG">
-<hr>
+<br>
 
 ## User Feed Recommendation:
 <img src="imgs/GET_FEED_X5.JPG">
